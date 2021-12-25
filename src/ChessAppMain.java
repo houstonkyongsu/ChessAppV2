@@ -33,7 +33,7 @@ public class ChessAppMain extends JPanel implements ActionListener {
         loadIconMap();
         Thread thread = new Thread() {
             public void run() {
-                //runGame();
+                runGame();
             }
         };
         thread.start();
@@ -193,7 +193,24 @@ public class ChessAppMain extends JPanel implements ActionListener {
 
     private void runGame() {
         logic = new Gamelogic();
+        logic.setupBoard();
 
+        try {
+
+            while (!logic.isGameOver()) {
+
+                updateGraphics();
+
+                while (logic.isPlayerTurn()) {
+
+                    TimeUnit.MILLISECONDS.sleep(1);
+                }
+
+                logic.setPlayerTurn(true);
+            }
+        } catch (Exception e) {
+            System.out.println(e.getMessage());
+        }
     }
 
     public static void main(String[] args) {
