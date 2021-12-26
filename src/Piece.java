@@ -6,12 +6,14 @@ public class Piece {
     private boolean color;
     private char symbol;
     private int moves;
+    private boolean isPinned;
 
     public Piece(int x, int y, boolean color, char symbol) {
         this.setX(x);
         this.setY(y);
         this.color = color;
         this.symbol = symbol;
+        isPinned = false;
         moves = 0;
     }
 
@@ -35,5 +37,9 @@ public class Piece {
 
     public int getMoves() { return moves; }
 
-    public void setMoves(int moves) { this.moves = moves;}
+    public void setMoves(int moves) { this.moves = moves; }
+
+    public boolean getPinned() { return isPinned; }
+
+    public void setPinned(boolean isPinned) { this.isPinned = isPinned; }
 }

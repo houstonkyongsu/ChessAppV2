@@ -37,6 +37,8 @@ public class Board {
 
     public void generateKingMoves(Piece[][] board, boolean col) {
         boolean[][] attackedSquareMask = new boolean[BOARD_SIZE][BOARD_SIZE];
+        boolean[][] captureMask = new boolean[BOARD_SIZE][BOARD_SIZE];
+        boolean[][] blockMask = new boolean[BOARD_SIZE][BOARD_SIZE];
 
         Pair kingLocation = findKing(board, col);
         if (kingLocation != null) {
@@ -45,9 +47,59 @@ public class Board {
             System.out.println("king moves not able to be generated");
         }
 
-        boolean[][] captureMask = new boolean[BOARD_SIZE][BOARD_SIZE];
-        boolean[][] blockMask = new boolean[BOARD_SIZE][BOARD_SIZE];
 
+    }
+
+    /**
+     * Function to check in each direction starting from the king to detect opponent sliding pieces which may be putting the king in
+     * check (bishop, rook, queen) and return their position if this is the case. Additionally, pieces of the same colour which may be
+     * pinned by these sliding pieces are also marked in the pinnedMask 2D boolean array.
+     * @param board             the current board state
+     * @param pinnedMask        the 2D boolean array to mark squares containing a pinned piece
+     * @param x                 the x coordinate of the king
+     * @param y                 the y coordinate of the king
+     * @param col               the colour of the king
+     * @return                  the coordinates of the piece which is putting the king in check, if no pieces are putting the king
+     *                          in check then the returned coordinates will be (-1, -1)
+     */
+    private Pair kingCheckedDirectionalUpdate(Piece[][] board, boolean[][] pinnedMask, int x, int y, boolean col) {
+        Pair res = new Pair(-1, -1);
+        for (int i = -1; i <= 1; i++) {
+            for (int j = -1; j <= 1; j++) {
+                if (i == 0 && j == 0) {
+                    continue;
+                }
+                Pair potentialPin = new Pair(-1, -1);
+                while (true) {
+                    x += i;
+                    y += j;
+                    if (!withinBounds(x, y)) {
+                        break;
+                    }
+                    if (board[x][y] == null) {
+                        continue;
+                    }
+                    if (board[x][y].getColor() == col) {
+                        if (potentialPin.getX() != -1 && potentialPin.getY() != -1) {
+                            break;
+                        }
+                        potentialPin.setX(x);
+                        potentialPin.setY(y);
+                    } else if (board[x][y].getSymbol() == 'Q' || board[x][y].getSymbol() == 'B'
+                            || board[x][y].getSymbol() == 'R') {
+                        if (potentialPin.getX() != -1 && potentialPin.getY() != -1) {
+                            pinnedMask[potentialPin.getX()][potentialPin.getY()] = true;
+                            board[potentialPin.getX()][potentialPin.getY()].setPinned(true);
+                        } else {
+                            res.setX(x);
+                            res.setY(y);
+                        }
+                        break;
+                    }
+                }
+            }
+        }
+        return res;
     }
 
     /**
@@ -162,8 +214,8 @@ public class Board {
      * @return                  the updated mask of attacked squares
      */
     private boolean[][] bitMaskKnightAttack(Piece[][] board, boolean[][] mask, int x, int y, boolean col, boolean includeOwn) {
-        for (int i = -2; i <= 2; i+=4) {
-            for (int j = -1; j <= 1; j+=2) {
+        for (int i = -2; i <= 2; i += 4) {
+            for (int j = -1; j <= 1; j += 2) {
                 if (withinBounds(x + i, y + j) && (board[x + i][y + j] == null
                         || board[x + i][y + j].getColor() != col || includeOwn)) {
                     mask[x + i][y + j] = true;
