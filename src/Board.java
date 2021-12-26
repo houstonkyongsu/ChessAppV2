@@ -35,6 +35,21 @@ public class Board {
         board[7][4] = new Piece(7, 4, true, 'K');
     }
 
+    public void generateKingMoves(Piece[][] board, boolean col) {
+        boolean[][] attackedSquareMask = new boolean[BOARD_SIZE][BOARD_SIZE];
+
+        Pair kingLocation = findKing(board, col);
+        if (kingLocation != null) {
+
+        } else {
+            System.out.println("king moves not able to be generated");
+        }
+
+        boolean[][] captureMask = new boolean[BOARD_SIZE][BOARD_SIZE];
+        boolean[][] blockMask = new boolean[BOARD_SIZE][BOARD_SIZE];
+
+    }
+
     /**
      * Function to return a 2D boolean array showing all the squares that a given piece on the board attacks
      * @param board             the current board state
@@ -62,6 +77,7 @@ public class Board {
                 mask = bitMaskDirectional(board, mask, piece.getX(), piece.getY(), -1, -1, piece.getColor(), includeOwn);
                 break;
             case 'N':
+                mask = bitMaskKnightAttack(board, mask, piece.getX(), piece.getY(), piece.getColor(), includeOwn);
                 break;
             case 'Q':
                 mask = bitMaskDirectional(board, mask, piece.getX(), piece.getY(), 1, 1, piece.getColor(), includeOwn);
@@ -74,6 +90,7 @@ public class Board {
                 mask = bitMaskDirectional(board, mask, piece.getX(), piece.getY(), 0, -1, piece.getColor(), includeOwn);
                 break;
             case 'K':
+                mask = bitMaskKingAttack(board, mask, piece.getX(), piece.getY(), piece.getColor(), includeOwn);
                 break;
             default:
                 System.out.println("invalid piece symbol, cant calculate attack mask");
@@ -135,6 +152,57 @@ public class Board {
     }
 
     /**
+     * Function to return a bit mask updated with the squares attacked by the knight at the given position
+     * @param board             the current board state
+     * @param mask              the 2D boolean array representing attacked squares
+     * @param x                 the x coordinate of the knight
+     * @param y                 the y coordinate of the knight
+     * @param col               the colour of the knight
+     * @param includeOwn        boolean to indicate if pieces of the same colour should be included in the mask
+     * @return                  the updated mask of attacked squares
+     */
+    private boolean[][] bitMaskKnightAttack(Piece[][] board, boolean[][] mask, int x, int y, boolean col, boolean includeOwn) {
+        for (int i = -2; i <= 2; i+=4) {
+            for (int j = -1; j <= 1; j+=2) {
+                if (withinBounds(x + i, y + j) && (board[x + i][y + j] == null
+                        || board[x + i][y + j].getColor() != col || includeOwn)) {
+                    mask[x + i][y + j] = true;
+                }
+                if (withinBounds(x + j, y + i) && (board[x + j][y + i] == null
+                        || board[x + j][y + i].getColor() != col || includeOwn)) {
+                    mask[x + j][y + i] = true;
+                }
+            }
+        }
+        return mask;
+    }
+
+    /**
+     * Function to return a bit mask updated with the squares attacked by the king at the given position
+     * @param board             the current board state
+     * @param mask              the 2D boolean array representing attacked squares
+     * @param x                 the x coordinate of the king
+     * @param y                 the y coordinate of the king
+     * @param col               the colour of the king
+     * @param includeOwn        boolean to indicate if pieces of the same colour should be included in the mask
+     * @return                  the updated mask of attacked squares
+     */
+    private boolean[][] bitMaskKingAttack(Piece[][] board, boolean[][] mask, int x, int y, boolean col, boolean includeOwn) {
+        for (int i = -1; i <= 1; i++) {
+            for (int j = -1; j <=1; j++) {
+                if (i == 0 && j == 0) {
+                    continue;
+                }
+                if (withinBounds(x + i, y + j) && (board[x + i][y + j] == null
+                        || board[x + i][y + j].getColor() != col || includeOwn)) {
+                    mask[x + i][y + j] = true;
+                }
+            }
+        }
+        return mask;
+    }
+
+    /**
      * Function to check that the provided coordinates are within the bounds of the chess board
      * @param x         the x coordinate
      * @param y         the y coordinate
@@ -155,7 +223,6 @@ public class Board {
      * @return                  the position of the king (or null if not found)
      */
     private Pair findKing(Piece[][] board, boolean col) {
-        Pair res = new Pair(-1, -1);
         for (int i = 0; i < BOARD_SIZE; i++) {
             for (int j = 0; j < BOARD_SIZE; j++) {
                 if (board[i][j] != null && board[i][j].getSymbol() == 'K' && board[i][j].getColor() == col) {
