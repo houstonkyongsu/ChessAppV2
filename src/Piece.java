@@ -5,21 +5,23 @@ public class Piece {
     private int y;
     private boolean color;
     private char symbol;
-    private int moves;
+    private int numMoves;
     private boolean isPinned;
+    private boolean[][] moveMask;
 
     public Piece(int x, int y, boolean color, char symbol) {
         this.setX(x);
         this.setY(y);
         this.color = color;
         this.symbol = symbol;
+        moveMask = new boolean[BOARD_SIZE][BOARD_SIZE];
         isPinned = false;
-        moves = 0;
+        numMoves = 0;
     }
 
     public Piece clonePiece() {
         Piece p = new Piece(getX(), getY(), getColor(), getSymbol());
-        p.setMoves(getMoves());
+        p.setNumMoves(getNumMoves());
         return p;
     }
 
@@ -35,11 +37,17 @@ public class Piece {
 
     public char getSymbol() { return symbol; }
 
-    public int getMoves() { return moves; }
+    public int getNumMoves() { return numMoves; }
 
-    public void setMoves(int moves) { this.moves = moves; }
+    public void setNumMoves(int moves) { this.numMoves = moves; }
 
     public boolean getPinned() { return isPinned; }
 
     public void setPinned(boolean isPinned) { this.isPinned = isPinned; }
+
+    public boolean[][] getMoveMask() { return moveMask; }
+
+    public void setMoveMask(boolean[][] moveMask) { this.moveMask = moveMask; }
+
+    public void resetMask() { moveMask = new boolean[BOARD_SIZE][BOARD_SIZE]; }
 }
