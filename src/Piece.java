@@ -8,6 +8,7 @@ public class Piece {
     private int numMoves;
     private boolean isPinned;
     private boolean[][] moveMask;
+    private boolean enPassant;
 
     public Piece(int x, int y, boolean color, char symbol) {
         this.setX(x);
@@ -17,8 +18,13 @@ public class Piece {
         moveMask = new boolean[BOARD_SIZE][BOARD_SIZE];
         isPinned = false;
         numMoves = 0;
+        enPassant = false;
     }
 
+    /**
+     * Function to clone this piece object
+     * @return          a new copy of this object with the same attribute values
+     */
     public Piece clonePiece() {
         Piece p = new Piece(getX(), getY(), getColor(), getSymbol());
         p.setNumMoves(getNumMoves());
@@ -50,4 +56,8 @@ public class Piece {
     public void setMoveMask(boolean[][] moveMask) { this.moveMask = moveMask; }
 
     public void resetMask() { moveMask = new boolean[BOARD_SIZE][BOARD_SIZE]; }
+
+    public boolean getEnPassant() { return enPassant; }
+
+    public void setEnPassant(boolean enPassant) { this.enPassant = enPassant; }
 }

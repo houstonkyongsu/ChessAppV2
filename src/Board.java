@@ -53,7 +53,7 @@ public class Board {
         boolean[][] tempKingMoves = new boolean[BOARD_SIZE][BOARD_SIZE];
 
         bitMaskKingAttack(board, tempKingMoves, king.getX(), king.getY(), col, false);
-        filterMask(tempKingMoves, attackedSquareMask);
+        filterXAndNotY(tempKingMoves, attackedSquareMask);
         king.setMoveMask(tempKingMoves);
 
         Stream.Builder<Pair> streamPieces = Stream.builder();
@@ -85,6 +85,18 @@ public class Board {
         }
     }
 
+    private void allPiecesFindMoves(Piece[][] board, boolean[][] mask, boolean col) {
+        for (int i = 0; i < BOARD_SIZE; i++) {
+            for (int j = 0; j < BOARD_SIZE; j++) {
+                if (board[i][j] != null && board[i][j].getColor() == col) {
+                    boolean[][] moveMask = getBitMaskMove(board, board[i][j], col);
+
+                }
+            }
+        }
+
+    }
+
     /**
      * Function to iterate over the board, and for each piece of the given colour add the squares which that piece attacks to a 2D
      * boolean array. Attacked squares can include pieces of the same colour as the piece the attacking squares are being calculated for.
@@ -97,7 +109,7 @@ public class Board {
         for (int i = 0; i < BOARD_SIZE; i++) {
             for (int j = 0; j < BOARD_SIZE;j++) {
                 if (board[i][j] != null && board[i][j].getColor() == col) {
-                    attackedSquareMask = getBitMaskAttack(board, attackedSquareMask, board[i][j], true);
+                    attackedSquareMask = getBitMaskAttack(board, attackedSquareMask, board[i][j]);
                 }
             }
         }
@@ -227,40 +239,86 @@ public class Board {
     }
 
     /**
-     * Function to return a 2D boolean array showing all the squares that a given piece on the board attacks
+     * Function to return a 2D boolean array showing all the squares that a single given piece on the board can move to
+     * @param board             the current board state
+     * @param piece             the piece for which the moves are being generated
+     * @param notChecked        boolean which denotes if the king is in check or not
+     * @return                  2D boolean array noting all the squares a piece can move to based on the piece's own movement rules
+     */
+    private boolean[][] getBitMaskMove(Piece[][] board, Piece piece, boolean notChecked) {
+        boolean[][] mask = new boolean[BOARD_SIZE][BOARD_SIZE];
+        switch (piece.getSymbol()) {
+            case 'P' -> {
+                bitMaskPawnAttack(board, mask, piece.getX(), piece.getY(), piece.getColor(), false);
+                bitMaskPawnMove(board, mask, piece.getX(), piece.getY(), piece.getColor());
+            }
+            case 'R' -> {
+                bitMaskDirectional(board, mask, piece.getX(), piece.getY(), 1, 0, piece.getColor(), false);
+                bitMaskDirectional(board, mask, piece.getX(), piece.getY(), 0, 1, piece.getColor(), false);
+                bitMaskDirectional(board, mask, piece.getX(), piece.getY(), -1, 0, piece.getColor(), false);
+                bitMaskDirectional(board, mask, piece.getX(), piece.getY(), 0, -1, piece.getColor(), false);
+            }
+            case 'B' -> {
+                bitMaskDirectional(board, mask, piece.getX(), piece.getY(), 1, 1, piece.getColor(), false);
+                bitMaskDirectional(board, mask, piece.getX(), piece.getY(), 1, -1, piece.getColor(), false);
+                bitMaskDirectional(board, mask, piece.getX(), piece.getY(), -1, 1, piece.getColor(), false);
+                bitMaskDirectional(board, mask, piece.getX(), piece.getY(), -1, -1, piece.getColor(), false);
+            }
+            case 'N' -> bitMaskKnightAttack(board, mask, piece.getX(), piece.getY(), piece.getColor(), false);
+            case 'Q' -> {
+                bitMaskDirectional(board, mask, piece.getX(), piece.getY(), 1, 1, piece.getColor(), false);
+                bitMaskDirectional(board, mask, piece.getX(), piece.getY(), 1, -1, piece.getColor(), false);
+                bitMaskDirectional(board, mask, piece.getX(), piece.getY(), -1, 1, piece.getColor(), false);
+                bitMaskDirectional(board, mask, piece.getX(), piece.getY(), -1, -1, piece.getColor(), false);
+                bitMaskDirectional(board, mask, piece.getX(), piece.getY(), 1, 0, piece.getColor(), false);
+                bitMaskDirectional(board, mask, piece.getX(), piece.getY(), 0, 1, piece.getColor(), false);
+                bitMaskDirectional(board, mask, piece.getX(), piece.getY(), -1, 0, piece.getColor(), false);
+                bitMaskDirectional(board, mask, piece.getX(), piece.getY(), 0, -1, piece.getColor(), false);
+            }
+            case 'K' -> {
+                if (notChecked && piece.getNumMoves() == 0) {
+                    // add castling move functionality
+                }
+            }
+            default -> System.out.println("invalid piece symbol, cant calculate move mask");
+        }
+        return mask;
+    }
+
+    /**
+     * Function to return a 2D boolean array with all the squares that a given piece on the board attacks added to it
      * @param board             the current board state
      * @param mask              the mask representing attacked squares
      * @param piece             the piece we are calculating attacking squares for
-     * @param includeOwn        boolean indicating whether pieces of same colour included in the mask
      * @return                  the updated mask representing the attacked squares
      */
-    public boolean[][] getBitMaskAttack(Piece[][] board, boolean[][] mask, Piece piece, boolean includeOwn) {
+    private boolean[][] getBitMaskAttack(Piece[][] board, boolean[][] mask, Piece piece) {
         switch (piece.getSymbol()) {
-            case 'P' -> bitMaskPawnAttack(board, mask, piece.getX(), piece.getY(), piece.getColor(), includeOwn);
+            case 'P' -> bitMaskPawnAttack(board, mask, piece.getX(), piece.getY(), piece.getColor(), true);
             case 'R' -> {
-                bitMaskDirectional(board, mask, piece.getX(), piece.getY(), 1, 0, piece.getColor(), includeOwn);
-                bitMaskDirectional(board, mask, piece.getX(), piece.getY(), 0, 1, piece.getColor(), includeOwn);
-                bitMaskDirectional(board, mask, piece.getX(), piece.getY(), -1, 0, piece.getColor(), includeOwn);
-                bitMaskDirectional(board, mask, piece.getX(), piece.getY(), 0, -1, piece.getColor(), includeOwn);
+                bitMaskDirectional(board, mask, piece.getX(), piece.getY(), 1, 0, piece.getColor(), true);
+                bitMaskDirectional(board, mask, piece.getX(), piece.getY(), 0, 1, piece.getColor(), true);
+                bitMaskDirectional(board, mask, piece.getX(), piece.getY(), -1, 0, piece.getColor(), true);
+                bitMaskDirectional(board, mask, piece.getX(), piece.getY(), 0, -1, piece.getColor(), true);
             }
             case 'B' -> {
-                bitMaskDirectional(board, mask, piece.getX(), piece.getY(), 1, 1, piece.getColor(), includeOwn);
-                bitMaskDirectional(board, mask, piece.getX(), piece.getY(), 1, -1, piece.getColor(), includeOwn);
-                bitMaskDirectional(board, mask, piece.getX(), piece.getY(), -1, 1, piece.getColor(), includeOwn);
-                bitMaskDirectional(board, mask, piece.getX(), piece.getY(), -1, -1, piece.getColor(), includeOwn);
+                bitMaskDirectional(board, mask, piece.getX(), piece.getY(), 1, 1, piece.getColor(), true);
+                bitMaskDirectional(board, mask, piece.getX(), piece.getY(), 1, -1, piece.getColor(), true);
+                bitMaskDirectional(board, mask, piece.getX(), piece.getY(), -1, 1, piece.getColor(), true);
+                bitMaskDirectional(board, mask, piece.getX(), piece.getY(), -1, -1, piece.getColor(), true);
             }
-            case 'N' -> bitMaskKnightAttack(board, mask, piece.getX(), piece.getY(), piece.getColor(), includeOwn);
+            case 'N' -> bitMaskKnightAttack(board, mask, piece.getX(), piece.getY(), piece.getColor(), true);
             case 'Q' -> {
-                bitMaskDirectional(board, mask, piece.getX(), piece.getY(), 1, 1, piece.getColor(), includeOwn);
-                bitMaskDirectional(board, mask, piece.getX(), piece.getY(), 1, -1, piece.getColor(), includeOwn);
-                bitMaskDirectional(board, mask, piece.getX(), piece.getY(), -1, 1, piece.getColor(), includeOwn);
-                bitMaskDirectional(board, mask, piece.getX(), piece.getY(), -1, -1, piece.getColor(), includeOwn);
-                bitMaskDirectional(board, mask, piece.getX(), piece.getY(), 1, 0, piece.getColor(), includeOwn);
-                bitMaskDirectional(board, mask, piece.getX(), piece.getY(), 0, 1, piece.getColor(), includeOwn);
-                bitMaskDirectional(board, mask, piece.getX(), piece.getY(), -1, 0, piece.getColor(), includeOwn);
-                bitMaskDirectional(board, mask, piece.getX(), piece.getY(), 0, -1, piece.getColor(), includeOwn);
+                bitMaskDirectional(board, mask, piece.getX(), piece.getY(), 1, 1, piece.getColor(), true);
+                bitMaskDirectional(board, mask, piece.getX(), piece.getY(), 1, -1, piece.getColor(), true);
+                bitMaskDirectional(board, mask, piece.getX(), piece.getY(), -1, 1, piece.getColor(), true);
+                bitMaskDirectional(board, mask, piece.getX(), piece.getY(), -1, -1, piece.getColor(), true);
+                bitMaskDirectional(board, mask, piece.getX(), piece.getY(), 1, 0, piece.getColor(), true);
+                bitMaskDirectional(board, mask, piece.getX(), piece.getY(), 0, 1, piece.getColor(), true);
+                bitMaskDirectional(board, mask, piece.getX(), piece.getY(), -1, 0, piece.getColor(), true);
+                bitMaskDirectional(board, mask, piece.getX(), piece.getY(), 0, -1, piece.getColor(), true);
             }
-            case 'K' -> bitMaskKingAttack(board, mask, piece.getX(), piece.getY(), piece.getColor(), includeOwn);
+            case 'K' -> bitMaskKingAttack(board, mask, piece.getX(), piece.getY(), piece.getColor(), true);
             default -> System.out.println("invalid piece symbol, cant calculate attack mask");
         }
         return mask;
@@ -310,7 +368,31 @@ public class Board {
         for (int i = -1; i <=1; i += 2) {
             if (withinBounds(x, y + i) && (board[x][y + i] == null || board[x][y + i].getColor() != col || includeOwn)) {
                 mask[x][y + i] = true;
+            } else if (withinBounds(x, y + i) && board[x - vert][y + i] != null && board[x - vert][y + i].getSymbol() == 'P'
+                    && board[x - vert][y + i].getColor() != col && board[x - vert][y + i].getNumMoves() == 1) {
+                mask[x][y + i] = true;
+                board[x - vert][y + i].setEnPassant(true);
             }
+        }
+    }
+
+    /**
+     * Function to get pawn moves which are not pawn attacks
+     * @param board             the current board state
+     * @param mask              the 2D boolean array representing possible move squares
+     * @param x                 the x coordinate of the pawn
+     * @param y                 the y coordinate of the pawn
+     * @param col               the colour of the pawn
+     */
+    private void bitMaskPawnMove(Piece[][] board, boolean[][] mask, int x, int y, boolean col) {
+        int vert = col ? -1 : 1;
+        int newx = x + vert;
+        if (withinBounds(newx, y) && board[newx][y] == null) {
+            mask[newx][y] = true;
+        }
+        newx += vert;
+        if (board[x][y].getNumMoves() == 0 && withinBounds(newx, y) && board[newx][y] == null) {
+            mask[newx][y] = true;
         }
     }
 
@@ -397,7 +479,7 @@ public class Board {
      * @param original          the mask to be reduced
      * @param filter            the mask used to remove squares from the original
      */
-    private void filterMask(boolean[][] original, boolean[][] filter) {
+    private void filterXAndNotY(boolean[][] original, boolean[][] filter) {
         for (int i = 0; i < BOARD_SIZE; i++) {
             for (int j = 0; j < BOARD_SIZE; j++) {
                 if (original[i][j] && filter[i][j]) {

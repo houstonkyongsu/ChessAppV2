@@ -80,7 +80,7 @@ public class ChessAppMain extends JPanel implements ActionListener {
             System.out.println("IOException caught! " + e.getMessage());
             e.printStackTrace();
         } catch (IllegalArgumentException e) {
-            System.out.println("Illegal argument exception caught! " + e.getMessage());
+            System.out.println("Illegal argument exception caught, check path to icon images! " + e.getMessage());
             e.printStackTrace();
         }
     }
