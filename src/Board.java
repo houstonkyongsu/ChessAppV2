@@ -65,6 +65,7 @@ public class Board {
                 .filter(x -> (x.getX() != -1 && x.getY() != -1))
                 .collect(Collectors.toCollection(ArrayList::new));
 
+        System.out.println("Checking pieces: " + checkingPieces.size());
         if (checkingPieces.size() == 2) {
             // king is in double check, only king moves are available, so no other calculation needed
         } else if (checkingPieces.size() == 1) {
@@ -77,24 +78,43 @@ public class Board {
                     || board[attacker.getX()][attacker.getY()].getSymbol() == 'B') {
                 updateCaptureBlockMask(captureBlockMask, attacker, new Pair(king.getX(), king.getY()));
             }
+            // maybe use boardminusking instead of the normal board, as king moves already calculated?
             Piece[][] boardCopy = deepCopyBoard(board);
             removePinnedPieces(boardCopy, pinnedMask);
         } else {
             // king is not in check, can proceed with normal move generation
+            // maybe use boardminusking instead of the normal board, as king moves already calculated?
             Piece[][] boardCopy = deepCopyBoard(board);
         }
     }
 
-    private void allPiecesFindMoves(Piece[][] board, boolean[][] mask, boolean col) {
+    private void allPiecesFindMovesSingleCheck(Piece[][] board, boolean[][] captureBlockMask, boolean col) {
+        for (int i = 0; i < BOARD_SIZE; i++) {
+            for (int j = 0; j < BOARD_SIZE; j++) {
+                if (board[i][j] != null && board[i][j].getColor() == col) {
+                    // Knights cannot move at all if they are pinned, so skip move generation
+                    if (captureBlockMask[i][j] && board[i][j].getSymbol() == 'N') {
+                        continue;
+                    }
+                    boolean[][] moveMask = getBitMaskMove(board, board[i][j], col);
+                    // filter out any moves which are not capturing or blocking the checking piece
+                    filterXAndNotY(moveMask, captureBlockMask);
+                    board[i][j].setMoveMask(moveMask);
+                }
+            }
+        }
+    }
+
+
+    private void allPiecesFindMovesNoCheck(Piece[][] board, boolean col) {
         for (int i = 0; i < BOARD_SIZE; i++) {
             for (int j = 0; j < BOARD_SIZE; j++) {
                 if (board[i][j] != null && board[i][j].getColor() == col) {
                     boolean[][] moveMask = getBitMaskMove(board, board[i][j], col);
-
+                    board[i][j].setMoveMask(moveMask);
                 }
             }
         }
-
     }
 
     /**
