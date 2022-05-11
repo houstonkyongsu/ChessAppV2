@@ -103,17 +103,13 @@ public class Board {
         for (int i = 0; i < BOARD_SIZE; i++) {
             for (int j = 0; j < BOARD_SIZE; j++) {
                 if (board[i][j] != null && board[i][j].getColor() == col) {
-                    // If a piece is pinned, the ways it can move are limited
-                    if (pinnedMask[i][j] != null) {
-                        // Knights cannot move at all if they are pinned, so skip move generation
-                        if (board[i][j].getSymbol() == 'N') {
-                            board[i][j].setNumMoves(0);
-                            board[i][j].setMoveMask(new boolean[BOARD_SIZE][BOARD_SIZE]);
-                            continue;
-                        }
-
+                    // Knights cannot move at all if they are pinned, so skip move generation
+                    if (pinnedMask[i][j] != null && board[i][j].getSymbol() == 'N') {
+                        board[i][j].setNumMoves(0);
+                        board[i][j].setMoveMask(new boolean[BOARD_SIZE][BOARD_SIZE]);
+                        continue;
                     }
-                    boolean[][] moveMask = getBitMaskMove(board, board[i][j], kingChecked);
+                    boolean[][] moveMask = getBitMaskMove(board, board[i][j], pinnedMask, kingChecked);
                     // filter out any moves which are not capturing or blocking the checking piece
                     filterXAndNotY(moveMask, captureBlockMask);
                     board[i][j].setNumMoves(sumMaskBits(moveMask));
@@ -270,38 +266,57 @@ public class Board {
      * Function to return a 2D boolean array showing all the squares that a single given piece on the board can move to
      * @param board             the current board state
      * @param piece             the piece for which the moves are being generated
-     * @param kingChecked        boolean which denotes if the king is in check or not
+     * @param pinnedMask        the 2D Pair array to indicate position of pinned pieces and the direction of their attacker
+     * @param kingChecked       boolean which denotes if the king is in check or not
      * @return                  2D boolean array noting all the squares a piece can move to based on the piece's own movement rules
      */
-    private boolean[][] getBitMaskMove(Piece[][] board, Piece piece, boolean kingChecked) {
+    private boolean[][] getBitMaskMove(Piece[][] board, Piece piece, Pair[][] pinnedMask, boolean kingChecked) {
         boolean[][] mask = new boolean[BOARD_SIZE][BOARD_SIZE];
+        Pair vector = pinnedMask[piece.getX()][piece.getY()];
         switch (piece.getSymbol()) {
             case 'P' -> {
+                // TODO:: need to add the vector to the pawn move calculation in case pawn is pinned
                 bitMaskPawnAttack(board, mask, piece.getX(), piece.getY(), piece.getColor(), false);
                 bitMaskPawnMove(board, mask, piece.getX(), piece.getY(), piece.getColor());
             }
             case 'R' -> {
-                bitMaskDirectional(board, mask, piece.getX(), piece.getY(), 1, 0, piece.getColor(), false);
-                bitMaskDirectional(board, mask, piece.getX(), piece.getY(), 0, 1, piece.getColor(), false);
-                bitMaskDirectional(board, mask, piece.getX(), piece.getY(), -1, 0, piece.getColor(), false);
-                bitMaskDirectional(board, mask, piece.getX(), piece.getY(), 0, -1, piece.getColor(), false);
+                if (vector == null || (vector.getX() == 0 && vector.getY() != 0)) {
+                    bitMaskDirectional(board, mask, piece.getX(), piece.getY(), 0, 1, piece.getColor(), false);
+                    bitMaskDirectional(board, mask, piece.getX(), piece.getY(), 0, -1, piece.getColor(), false);
+                }
+                if (vector == null || (vector.getX() != 0 && vector.getY() == 0)) {
+                    bitMaskDirectional(board, mask, piece.getX(), piece.getY(), 1, 0, piece.getColor(), false);
+                    bitMaskDirectional(board, mask, piece.getX(), piece.getY(), -1, 0, piece.getColor(), false);
+                }
             }
             case 'B' -> {
-                bitMaskDirectional(board, mask, piece.getX(), piece.getY(), 1, 1, piece.getColor(), false);
-                bitMaskDirectional(board, mask, piece.getX(), piece.getY(), 1, -1, piece.getColor(), false);
-                bitMaskDirectional(board, mask, piece.getX(), piece.getY(), -1, 1, piece.getColor(), false);
-                bitMaskDirectional(board, mask, piece.getX(), piece.getY(), -1, -1, piece.getColor(), false);
+                if (vector == null || vector.getX() + vector.getY() == 0) {
+                    bitMaskDirectional(board, mask, piece.getX(), piece.getY(), 1, -1, piece.getColor(), false);
+                    bitMaskDirectional(board, mask, piece.getX(), piece.getY(), -1, 1, piece.getColor(), false);
+                }
+                if (vector == null || vector.getX() + vector.getY() != 0) {
+                    bitMaskDirectional(board, mask, piece.getX(), piece.getY(), 1, 1, piece.getColor(), false);
+                    bitMaskDirectional(board, mask, piece.getX(), piece.getY(), -1, -1, piece.getColor(), false);
+                }
             }
             case 'N' -> bitMaskKnightAttack(board, mask, piece.getX(), piece.getY(), piece.getColor(), false);
             case 'Q' -> {
-                bitMaskDirectional(board, mask, piece.getX(), piece.getY(), 1, 1, piece.getColor(), false);
-                bitMaskDirectional(board, mask, piece.getX(), piece.getY(), 1, -1, piece.getColor(), false);
-                bitMaskDirectional(board, mask, piece.getX(), piece.getY(), -1, 1, piece.getColor(), false);
-                bitMaskDirectional(board, mask, piece.getX(), piece.getY(), -1, -1, piece.getColor(), false);
-                bitMaskDirectional(board, mask, piece.getX(), piece.getY(), 1, 0, piece.getColor(), false);
-                bitMaskDirectional(board, mask, piece.getX(), piece.getY(), 0, 1, piece.getColor(), false);
-                bitMaskDirectional(board, mask, piece.getX(), piece.getY(), -1, 0, piece.getColor(), false);
-                bitMaskDirectional(board, mask, piece.getX(), piece.getY(), 0, -1, piece.getColor(), false);
+                if (vector == null || (vector.getX() == 0 && vector.getY() != 0)) {
+                    bitMaskDirectional(board, mask, piece.getX(), piece.getY(), 0, 1, piece.getColor(), false);
+                    bitMaskDirectional(board, mask, piece.getX(), piece.getY(), 0, -1, piece.getColor(), false);
+                }
+                if (vector == null || (vector.getX() != 0 && vector.getY() == 0)) {
+                    bitMaskDirectional(board, mask, piece.getX(), piece.getY(), 1, 0, piece.getColor(), false);
+                    bitMaskDirectional(board, mask, piece.getX(), piece.getY(), -1, 0, piece.getColor(), false);
+                }
+                if (vector == null || vector.getX() + vector.getY() == 0) {
+                    bitMaskDirectional(board, mask, piece.getX(), piece.getY(), 1, -1, piece.getColor(), false);
+                    bitMaskDirectional(board, mask, piece.getX(), piece.getY(), -1, 1, piece.getColor(), false);
+                }
+                if (vector == null || (vector.getX() + vector.getY() != 0 && vector.getX() != 0 && vector.getY() != 0)) {
+                    bitMaskDirectional(board, mask, piece.getX(), piece.getY(), 1, 1, piece.getColor(), false);
+                    bitMaskDirectional(board, mask, piece.getX(), piece.getY(), -1, -1, piece.getColor(), false);
+                }
             }
             case 'K' -> {
                 if (kingChecked && piece.getNumMoves() == 0) {
