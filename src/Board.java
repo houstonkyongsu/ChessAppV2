@@ -49,8 +49,9 @@ public class Board {
         boardMinusKing[king.getX()][king.getY()] = null;
 
         boolean[][] attackedSquareMask = allPiecesAttackedSquareMask(boardMinusKing, !col);
-        boolean[][] pinnedMask = new boolean[BOARD_SIZE][BOARD_SIZE];
         boolean[][] tempKingMoves = new boolean[BOARD_SIZE][BOARD_SIZE];
+        boolean[][] captureBlockMask = new boolean[BOARD_SIZE][BOARD_SIZE];
+        Pair[][] pinnedMask = new Pair[BOARD_SIZE][BOARD_SIZE];
 
         bitMaskKingAttack(board, tempKingMoves, king.getX(), king.getY(), col, false);
         filterXAndNotY(tempKingMoves, attackedSquareMask);
@@ -70,7 +71,6 @@ public class Board {
             // king is in double check, only king moves are available, so no other calculation needed
         } else if (checkingPieces.size() == 1) {
             // king is in single check, can move king, capture attacking piece, or block if it's a sliding piece
-            boolean[][] captureBlockMask = new boolean[BOARD_SIZE][BOARD_SIZE];
             Pair attacker = checkingPieces.get(0);
             captureBlockMask[attacker.getX()][attacker.getY()] = true;
             if (board[attacker.getX()][attacker.getY()].getSymbol() == 'Q'
@@ -80,42 +80,49 @@ public class Board {
             }
             // maybe use boardminusking instead of the normal board, as king moves already calculated?
             Piece[][] boardCopy = deepCopyBoard(board);
-            removePinnedPieces(boardCopy, pinnedMask);
+            //removePinnedPieces(boardCopy, pinnedMask);
+            allPiecesFindMoves(boardCopy, captureBlockMask, pinnedMask, col, true);
         } else {
             // king is not in check, can proceed with normal move generation
             // maybe use boardminusking instead of the normal board, as king moves already calculated?
             Piece[][] boardCopy = deepCopyBoard(board);
+            allPiecesFindMoves(boardCopy, captureBlockMask, pinnedMask, col, false);
         }
     }
 
-    private void allPiecesFindMovesSingleCheck(Piece[][] board, boolean[][] captureBlockMask, boolean col) {
+    /**
+     * Function to iterate through all the pieces on the input board param and calculate the available moves for them, saving the
+     * calculated bit mask to each piece object. Additional input parameters are given to help determine what moves are available
+     * to each of the pieces, and to help filter through any unnecessary calculation.
+     * @param board             the current board state
+     * @param captureBlockMask  a 2D boolean array mask showing the positions pieces can go to either block or take the attacker
+     * @param col               the colour indicating who's turn it is
+     * @param kingChecked       a boolean value to represent if the king is in check or not
+     */
+    private void allPiecesFindMoves(Piece[][] board, boolean[][] captureBlockMask, Pair[][] pinnedMask, boolean col, boolean kingChecked) {
         for (int i = 0; i < BOARD_SIZE; i++) {
             for (int j = 0; j < BOARD_SIZE; j++) {
                 if (board[i][j] != null && board[i][j].getColor() == col) {
-                    // Knights cannot move at all if they are pinned, so skip move generation
-                    if (captureBlockMask[i][j] && board[i][j].getSymbol() == 'N') {
-                        continue;
+                    // If a piece is pinned, the ways it can move are limited
+                    if (pinnedMask[i][j] != null) {
+                        // Knights cannot move at all if they are pinned, so skip move generation
+                        if (board[i][j].getSymbol() == 'N') {
+                            board[i][j].setNumMoves(0);
+                            board[i][j].setMoveMask(new boolean[BOARD_SIZE][BOARD_SIZE]);
+                            continue;
+                        }
+
                     }
-                    boolean[][] moveMask = getBitMaskMove(board, board[i][j], col);
+                    boolean[][] moveMask = getBitMaskMove(board, board[i][j], kingChecked);
                     // filter out any moves which are not capturing or blocking the checking piece
                     filterXAndNotY(moveMask, captureBlockMask);
+                    board[i][j].setNumMoves(sumMaskBits(moveMask));
                     board[i][j].setMoveMask(moveMask);
                 }
             }
         }
     }
 
-
-    private void allPiecesFindMovesNoCheck(Piece[][] board, boolean col) {
-        for (int i = 0; i < BOARD_SIZE; i++) {
-            for (int j = 0; j < BOARD_SIZE; j++) {
-                if (board[i][j] != null && board[i][j].getColor() == col) {
-                    boolean[][] moveMask = getBitMaskMove(board, board[i][j], col);
-                    board[i][j].setMoveMask(moveMask);
-                }
-            }
-        }
-    }
 
     /**
      * Function to iterate over the board, and for each piece of the given colour add the squares which that piece attacks to a 2D
@@ -165,17 +172,18 @@ public class Board {
      * check (bishop, rook, queen) and return their position if this is the case. Additionally, pieces of the same colour which may be
      * pinned by these sliding pieces are also marked in the pinnedMask 2D boolean array.
      * @param board             the current board state
-     * @param pinnedMask        the 2D boolean array to mark squares containing a pinned piece
+     * @param pinnedMask        the 2D Pair array to mark positions of pinned piece, and the vector of their attacker from the king
      * @param x                 the x coordinate of the king
      * @param y                 the y coordinate of the king
      * @param col               the colour of the king
      * @return                  the coordinates of the piece which is putting the king in check, if no pieces are putting the king
      *                          in check then the returned coordinates will be (-1, -1)
      */
-    private Pair kingCheckedDirectionalUpdate(Piece[][] board, boolean[][] pinnedMask, int x, int y, boolean col) {
+    private Pair kingCheckedDirectionalUpdate(Piece[][] board, Pair[][] pinnedMask, int x, int y, boolean col) {
         Pair res = new Pair(-1, -1);
         for (int i = -1; i <= 1; i++) {
             for (int j = -1; j <= 1; j++) {
+                Pair vector = new Pair(i, j);
                 if (i == 0 && j == 0) {
                     continue;
                 }
@@ -198,7 +206,7 @@ public class Board {
                     } else if (board[x][y].getSymbol() == 'Q' || board[x][y].getSymbol() == 'B'
                             || board[x][y].getSymbol() == 'R') {
                         if (potentialPin.getX() != -1 && potentialPin.getY() != -1) {
-                            pinnedMask[potentialPin.getX()][potentialPin.getY()] = true;
+                            pinnedMask[potentialPin.getX()][potentialPin.getY()] = vector;
                             board[potentialPin.getX()][potentialPin.getY()].setPinned(true);
                         } else {
                             res.setX(x);
@@ -262,10 +270,10 @@ public class Board {
      * Function to return a 2D boolean array showing all the squares that a single given piece on the board can move to
      * @param board             the current board state
      * @param piece             the piece for which the moves are being generated
-     * @param notChecked        boolean which denotes if the king is in check or not
+     * @param kingChecked        boolean which denotes if the king is in check or not
      * @return                  2D boolean array noting all the squares a piece can move to based on the piece's own movement rules
      */
-    private boolean[][] getBitMaskMove(Piece[][] board, Piece piece, boolean notChecked) {
+    private boolean[][] getBitMaskMove(Piece[][] board, Piece piece, boolean kingChecked) {
         boolean[][] mask = new boolean[BOARD_SIZE][BOARD_SIZE];
         switch (piece.getSymbol()) {
             case 'P' -> {
@@ -296,7 +304,7 @@ public class Board {
                 bitMaskDirectional(board, mask, piece.getX(), piece.getY(), 0, -1, piece.getColor(), false);
             }
             case 'K' -> {
-                if (notChecked && piece.getNumMoves() == 0) {
+                if (kingChecked && piece.getNumMoves() == 0) {
                     // add castling move functionality
                 }
             }
@@ -512,16 +520,33 @@ public class Board {
     /**
      * Function to remove the pieces from the board which are in the squares marked 'true' in the given pinned mask
      * @param board             the current board state, including pieces which are pinned
-     * @param pinnedMask        the 2D boolean array which marks the positions of pinned pieces
+     * @param pinnedMask        the 2D Pair array which marks the positions of pinned pieces
      */
-    private void removePinnedPieces(Piece[][] board, boolean[][] pinnedMask) {
+    private void removePinnedPieces(Piece[][] board, Pair[][] pinnedMask) {
         for (int i = 0; i < BOARD_SIZE; i++) {
             for (int j = 0; j < BOARD_SIZE; j++) {
-                if (pinnedMask[i][j]) {
+                if (pinnedMask[i][j] != null) {
                     board[i][j] = null;
                 }
             }
         }
+    }
+
+    /**
+     * Function to return the total number of marked squares within a 2D boolean array
+     * @param mask              the 2D boolean array input containing bits to be summed
+     * @return                  the total number of set bits in the input mask
+     */
+    private int sumMaskBits(boolean[][] mask) {
+        int total = 0;
+        for (int i = 0; i < BOARD_SIZE; i++) {
+            for (int j = 0; j < BOARD_SIZE; j++) {
+                if (mask[i][j]) {
+                    total++;
+                }
+            }
+        }
+        return total;
     }
 
     /**
