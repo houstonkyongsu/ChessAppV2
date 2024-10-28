@@ -1,28 +1,61 @@
+import java.util.ArrayList;
+import java.util.List;
+
 public class Gamelogic {
 
     final int BOARD_SIZE = 8;
-    private boolean playerTurn;
+    private boolean colour;
     private int numMoves = 0;
     private boolean gameOver;
-    private Board board;
+    private BoardUtils boardUtils;
+    private Piece[][] board;
+    private MoveGeneration moveGeneration;
 
     public Gamelogic() {
-        board = new Board();
-        playerTurn = true;
+        boardUtils = new BoardUtils();
         gameOver = false;
+        colour = true;
+        board = new Piece[BOARD_SIZE][BOARD_SIZE];
+        moveGeneration = new MoveGeneration();
     }
 
     public void setupGame() {
-        board.setupBoard();
+        board = boardUtils.setupBoard();
+        colour = true;
     }
 
     public boolean isGameOver() { return gameOver; }
 
-    public Piece[][] getBoard() { return board.getBoard(); }
+    public Piece[][] getBoard() { return board; }
 
-    public boolean isPlayerTurn() { return playerTurn; }
+    public void setBoard(Piece[][] board) { this.board = board; }
 
-    public void setPlayerTurn(boolean playerTurn) { this.playerTurn = playerTurn; }
+    public boolean getColour() { return colour; }
+
+    public void setColour(boolean colour) { this.colour = colour; }
+
+    public void processGameMove(Move move) {
+        
+    }
+
+    public List<Piece> getMoveablePieces() {
+        if (!moveGeneration.generateMoves(board, colour)) {
+            gameOver = true;
+            return new ArrayList<Piece>();
+        }
+        ArrayList<Piece> moveList = new ArrayList<>();
+        for (int i = 0; i < BOARD_SIZE; i++) {
+            for (int j = 0; j < BOARD_SIZE; j++) {
+                if (board[i][j] != null && !board[i][j].getMoveList().isEmpty()) {
+                    moveList.add(board[i][j]);
+                }
+            }
+        }
+        if (moveList.isEmpty()) {
+            gameOver = true;
+        }
+        return moveList;
+    }
 
 
     /**

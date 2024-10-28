@@ -217,22 +217,18 @@ public class ChessAppMain extends JPanel implements ActionListener {
     }
 
     public static void main(String[] args) {
-        if (args.length == 2) {
-            SwingUtilities.invokeLater(new Runnable() {
-                @Override
-                public void run() {
-                    new ChessAppMain(Integer.parseInt(args[0]), Integer.parseInt(args[1]));
-                }
-            });
-        } else {
-            System.out.println("Usage: Chame <> <>");
-        }
+        SwingUtilities.invokeLater(new Runnable() {
+            @Override
+            public void run() {
+                new ChessAppMain(0, 1);
+            } // Integer.parseInt(args[0]), Integer.parseInt(args[1])
+        });
     }
 
     @Override
     public void actionPerformed(ActionEvent e) {
         JButton b = (JButton) e.getSource();
-        if (b != null && logic.isPlayerTurn() && b.getName() == null) {
+        if (b != null && logic.getColour() && b.getName() == null) {
             int i = (int) b.getClientProperty("row");
             int j = (int) b.getClientProperty("col");
             if (first.getX() == -1) {

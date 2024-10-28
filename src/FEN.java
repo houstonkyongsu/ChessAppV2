@@ -17,7 +17,7 @@ public class FEN {
                         k = 0;
                     }
                     if (board[i][j].getColor()) {
-                        fen.append(board[i][j].getSymbol());
+                        fen.append(Character.toUpperCase(board[i][j].getSymbol()));
                     } else {
                         fen.append(Character.toLowerCase(board[i][j].getSymbol()));
                     }

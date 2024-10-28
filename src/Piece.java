@@ -1,3 +1,5 @@
+import java.util.ArrayList;
+
 public class Piece {
 
     final int BOARD_SIZE = 8;
@@ -9,6 +11,7 @@ public class Piece {
     private boolean isPinned;
     private boolean[][] moveMask;
     private boolean enPassant;
+    private ArrayList<Pair> moveList;
 
     public Piece(int x, int y, boolean color, char symbol) {
         this.setX(x);
@@ -19,6 +22,7 @@ public class Piece {
         isPinned = false;
         numMoves = 0;
         enPassant = false;
+        moveList = new ArrayList<>();
     }
 
     /**
@@ -60,4 +64,17 @@ public class Piece {
     public boolean getEnPassant() { return enPassant; }
 
     public void setEnPassant(boolean enPassant) { this.enPassant = enPassant; }
+
+    public void setMoveListFromMask(boolean[][] moveMask) {
+        moveList = new ArrayList<>();
+        for (int i = 0; i < BOARD_SIZE; i++) {
+            for (int j = 0; j < BOARD_SIZE; j++) {
+                if (moveMask[i][j]) {
+                    moveList.add(new Pair(i, j));
+                }
+            }
+        }
+    }
+
+    public ArrayList<Pair> getMoveList() { return moveList; }
 }

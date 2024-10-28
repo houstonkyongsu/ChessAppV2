@@ -1,51 +1,21 @@
-import java.util.*;
+import java.util.ArrayList;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public class Board {
+public class MoveGeneration {
 
     final int BOARD_SIZE = 8;
-    private Piece[][] board;
+    BoardUtils boardUtils;
 
-    public Board() {
-        board = new Piece[BOARD_SIZE][BOARD_SIZE];
-    }
+    public MoveGeneration() { boardUtils = new BoardUtils(); }
 
-    public Piece[][] getBoard() { return board; }
-
-    /**
-     * Function to set up the board with pieces in normal start positions
-     */
-    public void setupBoard() {
-        for (int i = 0; i < BOARD_SIZE; i++) {
-            board[1][i] = new Piece(1, i, false, 'P');
-            board[6][i] = new Piece(6, i, true, 'P');
-        }
-        board[0][0] = new Piece(0, 0, false, 'R');
-        board[0][7] = new Piece(0, 7, false, 'R');
-        board[7][7] = new Piece(7, 7, true, 'R');
-        board[7][0] = new Piece(7, 0, true, 'R');
-        board[0][1] = new Piece(0, 1, false, 'N');
-        board[0][6] = new Piece(0, 6, false, 'N');
-        board[7][6] = new Piece(7, 6, true, 'N');
-        board[7][1] = new Piece(7, 1, true, 'N');
-        board[0][2] = new Piece(0, 2, false, 'B');
-        board[0][5] = new Piece(0, 5, false, 'B');
-        board[7][2] = new Piece(7, 2, true, 'B');
-        board[7][5] = new Piece(7, 5, true, 'B');
-        board[0][3] = new Piece(0, 3, false, 'Q');
-        board[7][3] = new Piece(7, 3, true, 'Q');
-        board[0][4] = new Piece(0, 4, false, 'K');
-        board[7][4] = new Piece(7, 4, true, 'K');
-    }
-
-    public void generateMoves(Piece[][] board, boolean col) {
+    public boolean generateMoves(Piece[][] board, boolean col) {
         Piece king = findKing(board, col);
         if (king == null) {
             System.out.println("king moves not able to be generated");
-            return;
+            return false;
         }
-        Piece[][] boardMinusKing = deepCopyBoard(board);
+        Piece[][] boardMinusKing = boardUtils.deepCopyBoard(board);
         boardMinusKing[king.getX()][king.getY()] = null;
 
         boolean[][] attackedSquareMask = allPiecesAttackedSquareMask(boardMinusKing, !col);
@@ -69,9 +39,14 @@ public class Board {
         System.out.println("Checking pieces: " + checkingPieces.size());
         if (checkingPieces.size() == 2) {
             // king is in double check, only king moves are available, so no other calculation needed
+            if (sumMaskBits(tempKingMoves) == 0) {
+                String winningCol = !col ? "white" : "black";
+                System.out.println("Checkmate, " + winningCol + " wins!");
+                return false;
+            }
         } else if (checkingPieces.size() == 1) {
             // king is in single check, can move king, capture attacking piece, or block if it's a sliding piece
-            Pair attacker = checkingPieces.get(0);
+            Pair attacker = checkingPieces.getFirst();
             captureBlockMask[attacker.getX()][attacker.getY()] = true;
             if (board[attacker.getX()][attacker.getY()].getSymbol() == 'Q'
                     || board[attacker.getX()][attacker.getY()].getSymbol() == 'R'
@@ -79,15 +54,16 @@ public class Board {
                 updateCaptureBlockMask(captureBlockMask, attacker, new Pair(king.getX(), king.getY()));
             }
             // maybe use boardminusking instead of the normal board, as king moves already calculated?
-            Piece[][] boardCopy = deepCopyBoard(board);
+            Piece[][] boardCopy = boardUtils.deepCopyBoard(board);
             //removePinnedPieces(boardCopy, pinnedMask);
             allPiecesFindMoves(boardCopy, captureBlockMask, pinnedMask, col, true);
         } else {
             // king is not in check, can proceed with normal move generation
             // maybe use boardminusking instead of the normal board, as king moves already calculated?
-            Piece[][] boardCopy = deepCopyBoard(board);
+            Piece[][] boardCopy = boardUtils.deepCopyBoard(board);
             allPiecesFindMoves(boardCopy, captureBlockMask, pinnedMask, col, false);
         }
+        return true;
     }
 
     /**
@@ -112,7 +88,7 @@ public class Board {
                     boolean[][] moveMask = getBitMaskMove(board, board[i][j], pinnedMask, kingChecked);
                     // filter out any moves which are not capturing or blocking the checking piece
                     filterXAndNotY(moveMask, captureBlockMask);
-                    board[i][j].setNumMoves(sumMaskBits(moveMask));
+                    board[i][j].setMoveListFromMask(moveMask);
                     board[i][j].setMoveMask(moveMask);
                 }
             }
@@ -563,22 +539,4 @@ public class Board {
         }
         return total;
     }
-
-    /**
-     * Function to provide a deep copy of the board
-     * @param board             the board state to be copied
-     * @return                  the new copy of the board
-     */
-    public Piece[][] deepCopyBoard(Piece[][] board) {
-        Piece[][] copy = new Piece[BOARD_SIZE][BOARD_SIZE];
-        for (int i = 0; i < BOARD_SIZE; i++) {
-            for (int j = 0; j < BOARD_SIZE; j++) {
-                if (board[i][j] != null) {
-                    copy[i][j] = board[i][j].clonePiece();
-                }
-            }
-        }
-        return copy;
-    }
-
 }
