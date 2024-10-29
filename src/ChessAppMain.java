@@ -52,29 +52,29 @@ public class ChessAppMain extends JPanel implements ActionListener {
     private void loadIconMap() {
         try {
             Image img;
-            img = ImageIO.read(getClass().getResource("/bk.png"));
+            img = ImageIO.read(getClass().getResource("icons/bk.png"));
             iconmap.put("BK", img);
-            img = ImageIO.read(getClass().getResource("/wk.png"));
+            img = ImageIO.read(getClass().getResource("icons/wk.png"));
             iconmap.put("WK", img);
-            img = ImageIO.read(getClass().getResource("/bq.png"));
+            img = ImageIO.read(getClass().getResource("icons/bq.png"));
             iconmap.put("BQ", img);
-            img = ImageIO.read(getClass().getResource("/wq.png"));
+            img = ImageIO.read(getClass().getResource("icons/wq.png"));
             iconmap.put("WQ", img);
-            img = ImageIO.read(getClass().getResource("/br.png"));
+            img = ImageIO.read(getClass().getResource("icons/br.png"));
             iconmap.put("BR", img);
-            img = ImageIO.read(getClass().getResource("/wr.png"));
+            img = ImageIO.read(getClass().getResource("icons/wr.png"));
             iconmap.put("WR", img);
-            img = ImageIO.read(getClass().getResource("/bb.png"));
+            img = ImageIO.read(getClass().getResource("icons/bb.png"));
             iconmap.put("BB", img);
-            img = ImageIO.read(getClass().getResource("/wb.png"));
+            img = ImageIO.read(getClass().getResource("icons/wb.png"));
             iconmap.put("WB", img);
-            img = ImageIO.read(getClass().getResource("/bp.png"));
+            img = ImageIO.read(getClass().getResource("icons/bp.png"));
             iconmap.put("BP", img);
-            img = ImageIO.read(getClass().getResource("/wp.png"));
+            img = ImageIO.read(getClass().getResource("icons/wp.png"));
             iconmap.put("WP", img);
-            img = ImageIO.read(getClass().getResource("/bn.png"));
+            img = ImageIO.read(getClass().getResource("icons/bn.png"));
             iconmap.put("BN", img);
-            img = ImageIO.read(getClass().getResource("/wn.png"));
+            img = ImageIO.read(getClass().getResource("icons/wn.png"));
             iconmap.put("WN", img);
         } catch (IOException e) {
             System.out.println("IOException caught! " + e.getMessage());
@@ -204,12 +204,12 @@ public class ChessAppMain extends JPanel implements ActionListener {
 
                 updateGraphics();
 
-                while (logic.isPlayerTurn()) {
+                while (logic.getColour()) {
 
                     TimeUnit.MILLISECONDS.sleep(1);
                 }
 
-                logic.setPlayerTurn(true);
+                logic.setColour(!logic.getColour());
             }
         } catch (Exception e) {
             System.out.println(e.getMessage());
