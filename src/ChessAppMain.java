@@ -18,7 +18,7 @@ public class ChessAppMain extends JPanel implements ActionListener {
     private JPanel board;
     private static JButton[][] gridSquares;
     private HashMap<String, Image> iconmap;
-    private Pair first;
+    private Piece movePiece = null;
 
     private static final long serialVersionUID = 1L;
 
@@ -28,7 +28,6 @@ public class ChessAppMain extends JPanel implements ActionListener {
         frame = new JFrame("ChameOfGuess");
         gridSquares = new JButton[BOARD_SIZE][BOARD_SIZE];
         iconmap = new HashMap<>();
-        first = new Pair(-1, -1);
         loadGUI();
         loadIconMap();
         Thread thread = new Thread() {
@@ -197,19 +196,16 @@ public class ChessAppMain extends JPanel implements ActionListener {
     private void runGame() {
         logic = new Gamelogic();
         logic.setupGame();
+        logic.updateAvailableMoves();
 
         try {
 
             while (!logic.isGameOver()) {
-
+                System.out.println("here");
                 updateGraphics();
+                TimeUnit.MILLISECONDS.sleep(10);
 
-                while (logic.getColour()) {
 
-                    TimeUnit.MILLISECONDS.sleep(1);
-                }
-
-                logic.setColour(!logic.getColour());
             }
         } catch (Exception e) {
             System.out.println(e.getMessage());
@@ -231,17 +227,16 @@ public class ChessAppMain extends JPanel implements ActionListener {
         if (b != null && logic.getColour() && b.getName() == null) {
             int i = (int) b.getClientProperty("row");
             int j = (int) b.getClientProperty("col");
-            if (first.getX() == -1) {
-                System.out.println("first: " + j + "," + i);
-                first.setX(j);
-                first.setY(i);
-            } else {
-                System.out.println("second: " + j + "," + i);
-                //if (logic.tryMove(first.getX(), first.getY(), j, i)) {
-                //    logic.makeGameMove(first.getX(), first.getY(), j, i, true);
-                //}
-                first.setX(-1);
-                first.setY(-1);
+            if (logic.checkValidPiece(j, i, logic.getColour())) {
+                movePiece = logic.getPiece(j, i);
+                System.out.println(movePiece.getSymbol());
+            } else if (movePiece != null) {
+                if (logic.moveInPieceMoveList(movePiece, j, i)) {
+                    logic.makeGameMove(movePiece, j, i);
+                    movePiece = null;
+                    logic.setColour(!logic.getColour());
+                    logic.updateAvailableMoves();
+                }
             }
         } else if (b != null && b.getName() != null && logic.isGameOver()) {
             if (b.getName().equals("left")) {

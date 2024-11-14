@@ -40,8 +40,36 @@ public class Gamelogic {
 
     public List<Piece> getMoveablePieces() { return moveablePieces; }
 
-    public void makeGameMove(Move move) {
-        
+    public Piece getPiece(int x, int y) { return board[x][y]; }
+
+    public boolean checkValidPiece(int x, int y, boolean col) {
+        return board[x][y] != null && board[x][y].getColor() == col;
+    }
+
+    public boolean moveInPieceMoveList(Piece piece, int x, int y) {
+        for (Pair pair : piece.getMoveList()) {
+            if (pair.getX() == x && pair.getY() == y) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public List<Pair> getPieceMoveList(int x, int y) {
+        List<Pair> moves = new ArrayList<>();
+        if (board[x][y] != null) {
+            moves = board[x][y].getMoveList();
+        }
+        return moves;
+    }
+
+    public void makeGameMove(Piece piece, int x, int y) {
+        int oldX = piece.getX();
+        int oldY = piece.getY();
+        board[x][y] = piece;
+        piece.setX(x);
+        piece.setY(y);
+        board[oldX][oldY] = null;
     }
 
     public void updateAvailableMoves() {

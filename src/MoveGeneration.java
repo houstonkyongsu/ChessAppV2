@@ -161,14 +161,16 @@ public class MoveGeneration {
         Pair res = new Pair(-1, -1);
         for (int i = -1; i <= 1; i++) {
             for (int j = -1; j <= 1; j++) {
+                int tempX = x;
+                int tempY = y;
                 Pair vector = new Pair(i, j);
                 if (i == 0 && j == 0) {
                     continue;
                 }
                 Pair potentialPin = new Pair(-1, -1);
                 while (true) {
-                    x += i;
-                    y += j;
+                    tempX += i;
+                    tempY += j;
                     if (!withinBounds(x, y)) {
                         break;
                     }
@@ -181,8 +183,8 @@ public class MoveGeneration {
                         }
                         potentialPin.setX(x);
                         potentialPin.setY(y);
-                    } else if (board[x][y].getSymbol() == 'Q' || board[x][y].getSymbol() == 'B'
-                            || board[x][y].getSymbol() == 'R') {
+                    } else if (board[x][y].getSymbol() == 'Q' || (board[x][y].getSymbol() == 'B' && (i != 0 && j != 0))
+                            || (board[x][y].getSymbol() == 'R' && (i == 0 || j == 0))) {
                         if (potentialPin.getX() != -1 && potentialPin.getY() != -1) {
                             pinnedMask[potentialPin.getX()][potentialPin.getY()] = vector;
                             board[potentialPin.getX()][potentialPin.getY()].setPinned(true);
@@ -390,6 +392,7 @@ public class MoveGeneration {
     private void bitMaskPawnAttack(Piece[][] board, boolean[][] mask, int x, int y, boolean col, boolean includeOwn) {
         int vert = col ? -1 : 1;
         x += vert;
+        // TODO:: CHANGE LOGIC SO PAWN ATTACK OR PAWN MOVE ARE DIFFERENT, USE A BOOL
         for (int i = -1; i <=1; i += 2) {
             if (withinBounds(x, y + i) && (board[x][y + i] == null || board[x][y + i].getColor() != col || includeOwn)) {
                 mask[x][y + i] = true;
