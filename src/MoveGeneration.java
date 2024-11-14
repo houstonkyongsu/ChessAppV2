@@ -9,6 +9,12 @@ public class MoveGeneration {
 
     public MoveGeneration() { boardUtils = new BoardUtils(); }
 
+    /**
+     * Function to generate all available moves for a given colour and board state, and then save the available moves in that pieces move list.
+     * @param board     the current board state
+     * @param col       the colour to find moves for
+     * @return
+     */
     public boolean generateMoves(Piece[][] board, boolean col) {
         Piece king = findKing(board, col);
         if (king == null) {

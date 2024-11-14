@@ -10,6 +10,8 @@ public class Gamelogic {
     private BoardUtils boardUtils;
     private Piece[][] board;
     private MoveGeneration moveGeneration;
+    private ArrayList<Piece> moveablePieces;
+    private ArrayList<Move> moveHistory;
 
     public Gamelogic() {
         boardUtils = new BoardUtils();
@@ -17,6 +19,8 @@ public class Gamelogic {
         colour = true;
         board = new Piece[BOARD_SIZE][BOARD_SIZE];
         moveGeneration = new MoveGeneration();
+        moveablePieces = new ArrayList<>();
+        moveHistory = new ArrayList<>();
     }
 
     public void setupGame() {
@@ -34,29 +38,29 @@ public class Gamelogic {
 
     public void setColour(boolean colour) { this.colour = colour; }
 
-    public void processGameMove(Move move) {
+    public List<Piece> getMoveablePieces() { return moveablePieces; }
+
+    public void makeGameMove(Move move) {
         
     }
 
-    public List<Piece> getMoveablePieces() {
+    public void updateAvailableMoves() {
         if (!moveGeneration.generateMoves(board, colour)) {
             gameOver = true;
-            return new ArrayList<Piece>();
         }
-        ArrayList<Piece> moveList = new ArrayList<>();
+        ArrayList<Piece> pieceList = new ArrayList<>();
         for (int i = 0; i < BOARD_SIZE; i++) {
             for (int j = 0; j < BOARD_SIZE; j++) {
                 if (board[i][j] != null && !board[i][j].getMoveList().isEmpty()) {
-                    moveList.add(board[i][j]);
+                    pieceList.add(board[i][j]);
                 }
             }
         }
-        if (moveList.isEmpty()) {
+        if (pieceList.isEmpty()) {
             gameOver = true;
         }
-        return moveList;
+        moveablePieces = pieceList;
     }
-
 
     /**
      * Function to provide a deep copy of the board
