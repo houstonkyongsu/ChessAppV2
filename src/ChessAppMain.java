@@ -201,7 +201,6 @@ public class ChessAppMain extends JPanel implements ActionListener {
         try {
 
             while (!logic.isGameOver()) {
-                System.out.println("here");
                 updateGraphics();
                 TimeUnit.MILLISECONDS.sleep(10);
 
@@ -224,7 +223,7 @@ public class ChessAppMain extends JPanel implements ActionListener {
     @Override
     public void actionPerformed(ActionEvent e) {
         JButton b = (JButton) e.getSource();
-        if (b != null && logic.getColour() && b.getName() == null) {
+        if (b != null && b.getName() == null) {
             int i = (int) b.getClientProperty("row");
             int j = (int) b.getClientProperty("col");
             if (logic.checkValidPiece(j, i, logic.getColour())) {

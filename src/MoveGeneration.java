@@ -60,14 +60,14 @@ public class MoveGeneration {
                 updateCaptureBlockMask(captureBlockMask, attacker, new Pair(king.getX(), king.getY()));
             }
             // maybe use boardminusking instead of the normal board, as king moves already calculated?
-            Piece[][] boardCopy = boardUtils.deepCopyBoard(board);
+            //Piece[][] boardCopy = boardUtils.deepCopyBoard(board);
             //removePinnedPieces(boardCopy, pinnedMask);
-            allPiecesFindMoves(boardCopy, captureBlockMask, pinnedMask, col, true);
+            allPiecesFindMoves(board, captureBlockMask, pinnedMask, col, true);
         } else {
             // king is not in check, can proceed with normal move generation
             // maybe use boardminusking instead of the normal board, as king moves already calculated?
-            Piece[][] boardCopy = boardUtils.deepCopyBoard(board);
-            allPiecesFindMoves(boardCopy, captureBlockMask, pinnedMask, col, false);
+            //Piece[][] boardCopy = boardUtils.deepCopyBoard(board);
+            allPiecesFindMoves(board, captureBlockMask, pinnedMask, col, false);
         }
         return true;
     }
@@ -87,7 +87,6 @@ public class MoveGeneration {
                 if (board[i][j] != null && board[i][j].getColor() == col) {
                     // Knights cannot move at all if they are pinned, so skip move generation
                     if (pinnedMask[i][j] != null && board[i][j].getSymbol() == 'N') {
-                        board[i][j].setNumMoves(0);
                         board[i][j].setMoveMask(new boolean[BOARD_SIZE][BOARD_SIZE]);
                         continue;
                     }
@@ -392,13 +391,12 @@ public class MoveGeneration {
     private void bitMaskPawnAttack(Piece[][] board, boolean[][] mask, int x, int y, boolean col, boolean includeOwn) {
         int vert = col ? -1 : 1;
         x += vert;
-        // TODO:: CHANGE LOGIC SO PAWN ATTACK OR PAWN MOVE ARE DIFFERENT, USE A BOOL
         for (int i = -1; i <=1; i += 2) {
-            if (withinBounds(x, y + i) && (board[x][y + i] == null || board[x][y + i].getColor() != col || includeOwn)) {
+            if (withinBounds(x, y + i) && board[x][y + i] != null && (board[x][y + i].getColor() != col || includeOwn)) {
                 mask[x][y + i] = true;
-            } else if (withinBounds(x, y + i) && board[x - vert][y + i] != null && board[x - vert][y + i].getSymbol() == 'P'
+            } else if (withinBounds(x - vert, y + i) && board[x - vert][y + i] != null && board[x - vert][y + i].getSymbol() == 'P'
                     && board[x - vert][y + i].getColor() != col && board[x - vert][y + i].getNumMoves() == 1) {
-                mask[x][y + i] = true;
+                mask[x - vert][y + i] = true;
                 board[x - vert][y + i].setEnPassant(true);
             }
         }

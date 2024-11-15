@@ -49,7 +49,9 @@ public class Piece {
 
     public int getNumMoves() { return numMoves; }
 
-    public void setNumMoves(int moves) { this.numMoves = moves; }
+    public void setNumMoves(int numMoves) { this.numMoves = numMoves; }
+
+    public void increamentNumMoves() { numMoves++; }
 
     public boolean getPinned() { return isPinned; }
 
@@ -64,6 +66,11 @@ public class Piece {
     public boolean getEnPassant() { return enPassant; }
 
     public void setEnPassant(boolean enPassant) { this.enPassant = enPassant; }
+
+    public void clearMoves() {
+        moveList = new ArrayList<>();
+        resetMask();
+    }
 
     public void setMoveListFromMask(boolean[][] moveMask) {
         moveList = new ArrayList<>();
