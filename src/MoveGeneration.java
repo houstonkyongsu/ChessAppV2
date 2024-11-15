@@ -33,40 +33,45 @@ public class MoveGeneration {
         filterXAndNotY(tempKingMoves, attackedSquareMask);
         king.setMoveMask(tempKingMoves);
 
-        Stream.Builder<Pair> streamPieces = Stream.builder();
-        streamPieces.accept(kingCheckedDirectionalUpdate(board, pinnedMask, king.getX(), king.getY(), col));
-        streamPieces.accept(kingCheckedKnight(board, king.getX(), king.getY(), col));
-        streamPieces.accept(kingCheckedPawn(board, king.getX(), king.getY(), col));
+        if (attackedSquareMask[king.getX()][king.getY()]) {
+            Stream.Builder<Pair> streamPieces = Stream.builder();
+            streamPieces.accept(kingCheckedDirectionalUpdate(board, pinnedMask, king.getX(), king.getY(), col));
+            streamPieces.accept(kingCheckedKnight(board, king.getX(), king.getY(), col));
+            streamPieces.accept(kingCheckedPawn(board, king.getX(), king.getY(), col));
 
-        ArrayList<Pair> checkingPieces = streamPieces.build()
-                .filter(x -> (x.getX() != -1 && x.getY() != -1))
-                .collect(Collectors.toCollection(ArrayList::new));
+            ArrayList<Pair> checkingPieces = streamPieces.build()
+                    .filter(x -> (x.getX() != -1 && x.getY() != -1))
+                    .collect(Collectors.toCollection(ArrayList::new));
 
-        System.out.println("Checking pieces: " + checkingPieces.size());
-        if (checkingPieces.size() == 2) {
-            // king is in double check, only king moves are available, so no other calculation needed
-            if (sumMaskBits(tempKingMoves) == 0) {
-                String winningCol = !col ? "white" : "black";
-                System.out.println("Checkmate, " + winningCol + " wins!");
-                return false;
+            System.out.println("Checking pieces: " + checkingPieces.size());
+            if (checkingPieces.size() == 2) {
+                // king is in double check, only king moves are available, so no other calculation needed
+                if (sumMaskBits(tempKingMoves) == 0) {
+                    String winningCol = !col ? "white" : "black";
+                    System.out.println("Checkmate, " + winningCol + " wins!");
+                    return false;
+                }
+            } else if (checkingPieces.size() == 1) {
+                // king is in single check, can move king, capture attacking piece, or block if it's a sliding piece
+                Pair attacker = checkingPieces.getFirst();
+                captureBlockMask[attacker.getX()][attacker.getY()] = true;
+                if (board[attacker.getX()][attacker.getY()].getSymbol() == 'Q'
+                        || board[attacker.getX()][attacker.getY()].getSymbol() == 'R'
+                        || board[attacker.getX()][attacker.getY()].getSymbol() == 'B') {
+                    updateCaptureBlockMask(captureBlockMask, attacker, new Pair(king.getX(), king.getY()));
+                }
+                // maybe use boardminusking instead of the normal board, as king moves already calculated?
+                //Piece[][] boardCopy = boardUtils.deepCopyBoard(board);
+                //removePinnedPieces(boardCopy, pinnedMask);
+                allPiecesFindMoves(board, captureBlockMask, pinnedMask, col, true);
+            } else {
+                System.out.println("you shouldnt be here, in check but no checking pieces found");
             }
-        } else if (checkingPieces.size() == 1) {
-            // king is in single check, can move king, capture attacking piece, or block if it's a sliding piece
-            Pair attacker = checkingPieces.getFirst();
-            captureBlockMask[attacker.getX()][attacker.getY()] = true;
-            if (board[attacker.getX()][attacker.getY()].getSymbol() == 'Q'
-                    || board[attacker.getX()][attacker.getY()].getSymbol() == 'R'
-                    || board[attacker.getX()][attacker.getY()].getSymbol() == 'B') {
-                updateCaptureBlockMask(captureBlockMask, attacker, new Pair(king.getX(), king.getY()));
-            }
-            // maybe use boardminusking instead of the normal board, as king moves already calculated?
-            //Piece[][] boardCopy = boardUtils.deepCopyBoard(board);
-            //removePinnedPieces(boardCopy, pinnedMask);
-            allPiecesFindMoves(board, captureBlockMask, pinnedMask, col, true);
         } else {
             // king is not in check, can proceed with normal move generation
             // maybe use boardminusking instead of the normal board, as king moves already calculated?
             //Piece[][] boardCopy = boardUtils.deepCopyBoard(board);
+            kingCheckedDirectionalUpdate(board, pinnedMask, king.getX(), king.getY(), col);
             allPiecesFindMoves(board, captureBlockMask, pinnedMask, col, false);
         }
         return true;
@@ -91,8 +96,10 @@ public class MoveGeneration {
                         continue;
                     }
                     boolean[][] moveMask = getBitMaskMove(board, board[i][j], pinnedMask, kingChecked);
-                    // filter out any moves which are not capturing or blocking the checking piece
-                    filterXAndNotY(moveMask, captureBlockMask);
+                    if (kingChecked) {
+                        // filter out any moves which are not capturing or blocking the checking piece
+                        filterXAndY(moveMask, captureBlockMask);
+                    }
                     board[i][j].setMoveListFromMask(moveMask);
                     board[i][j].setMoveMask(moveMask);
                 }
@@ -170,26 +177,26 @@ public class MoveGeneration {
                 while (true) {
                     tempX += i;
                     tempY += j;
-                    if (!withinBounds(x, y)) {
+                    if (!withinBounds(tempX, tempY)) {
                         break;
                     }
-                    if (board[x][y] == null) {
+                    if (board[tempX][tempY] == null) {
                         continue;
                     }
-                    if (board[x][y].getColor() == col) {
+                    if (board[tempX][tempY].getColor() == col) {
                         if (potentialPin.getX() != -1 && potentialPin.getY() != -1) {
                             break;
                         }
-                        potentialPin.setX(x);
-                        potentialPin.setY(y);
-                    } else if (board[x][y].getSymbol() == 'Q' || (board[x][y].getSymbol() == 'B' && (i != 0 && j != 0))
-                            || (board[x][y].getSymbol() == 'R' && (i == 0 || j == 0))) {
+                        potentialPin.setX(tempX);
+                        potentialPin.setY(tempY);
+                    } else if (board[tempX][tempY].getSymbol() == 'Q' || (board[tempX][tempY].getSymbol() == 'B' && (i != 0 && j != 0))
+                            || (board[tempX][tempY].getSymbol() == 'R' && (i == 0 || j == 0))) {
                         if (potentialPin.getX() != -1 && potentialPin.getY() != -1) {
                             pinnedMask[potentialPin.getX()][potentialPin.getY()] = vector;
                             board[potentialPin.getX()][potentialPin.getY()].setPinned(true);
                         } else {
-                            res.setX(x);
-                            res.setY(y);
+                            res.setX(tempX);
+                            res.setY(tempY);
                         }
                         break;
                     }
@@ -511,6 +518,20 @@ public class MoveGeneration {
                 if (original[i][j] && filter[i][j]) {
                     original[i][j] = false;
                 }
+            }
+        }
+    }
+
+    /**
+     * Function to filter out true values from the original mask in all places where there is a false value in the filter mask
+     * i.e. perform logical 'and' operation on each board square between the two masks
+     * @param original          the mask to be reduced
+     * @param filter            the mask used to remove squares from the original
+     */
+    private void filterXAndY(boolean[][] original, boolean[][] filter) {
+        for (int i = 0; i < BOARD_SIZE; i++) {
+            for (int j = 0; j < BOARD_SIZE; j++) {
+                original[i][j] = original[i][j] && filter[i][j];
             }
         }
     }
