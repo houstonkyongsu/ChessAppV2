@@ -32,6 +32,7 @@ public class MoveGeneration {
         bitMaskKingAttack(board, tempKingMoves, king.getX(), king.getY(), col, false);
         filterXAndNotY(tempKingMoves, attackedSquareMask);
         king.setMoveMask(tempKingMoves);
+        king.setMoveListFromMask(tempKingMoves);
 
         if (attackedSquareMask[king.getX()][king.getY()]) {
             Stream.Builder<Pair> streamPieces = Stream.builder();
@@ -199,6 +200,8 @@ public class MoveGeneration {
                             res.setY(tempY);
                         }
                         break;
+                    } else if (board[tempX][tempY].getColor() != col) {
+                        break;
                     }
                 }
             }
@@ -265,9 +268,8 @@ public class MoveGeneration {
         Pair vector = pinnedMask[piece.getX()][piece.getY()];
         switch (piece.getSymbol()) {
             case 'P' -> {
-                // TODO:: need to add the vector to the pawn move calculation in case pawn is pinned
-                bitMaskPawnAttack(board, mask, piece.getX(), piece.getY(), piece.getColor(), false);
-                bitMaskPawnMove(board, mask, piece.getX(), piece.getY(), piece.getColor());
+                bitMaskPawnAttack(board, mask, piece.getX(), piece.getY(), piece.getColor(), false, vector);
+                bitMaskPawnMove(board, mask, piece.getX(), piece.getY(), piece.getColor(), vector);
             }
             case 'R' -> {
                 if (vector == null || (vector.getX() == 0 && vector.getY() != 0)) {
@@ -289,7 +291,11 @@ public class MoveGeneration {
                     bitMaskDirectional(board, mask, piece.getX(), piece.getY(), -1, -1, piece.getColor(), false);
                 }
             }
-            case 'N' -> bitMaskKnightAttack(board, mask, piece.getX(), piece.getY(), piece.getColor(), false);
+            case 'N' -> {
+                if (vector == null) {
+                    bitMaskKnightAttack(board, mask, piece.getX(), piece.getY(), piece.getColor(), false);
+                }
+            }
             case 'Q' -> {
                 if (vector == null || (vector.getX() == 0 && vector.getY() != 0)) {
                     bitMaskDirectional(board, mask, piece.getX(), piece.getY(), 0, 1, piece.getColor(), false);
@@ -327,7 +333,7 @@ public class MoveGeneration {
      */
     private boolean[][] getBitMaskAttack(Piece[][] board, boolean[][] mask, Piece piece) {
         switch (piece.getSymbol()) {
-            case 'P' -> bitMaskPawnAttack(board, mask, piece.getX(), piece.getY(), piece.getColor(), true);
+            case 'P' -> bitMaskPawnAttack(board, mask, piece.getX(), piece.getY(), piece.getColor(), true, null);
             case 'R' -> {
                 bitMaskDirectional(board, mask, piece.getX(), piece.getY(), 1, 0, piece.getColor(), true);
                 bitMaskDirectional(board, mask, piece.getX(), piece.getY(), 0, 1, piece.getColor(), true);
@@ -390,21 +396,26 @@ public class MoveGeneration {
      * Function to update a given bit mask with the squares attacked by a pawn in the given position on the board
      * @param board             the current board state
      * @param mask              the 2D array boolean mask to represent attacked squares
-     * @param x                 the x coordinate of the pawn
+     * @param X                 the x coordinate of the pawn
      * @param y                 the y coordinate of the pawn
      * @param col               the colour of the piece
      * @param includeOwn        boolean indicating whether pieces of same colour should be included in mask
+     * @param pinnedVector      vector pair to represent the direction of a pinning piece, to only movement along that vector is allowed if it's not null
      */
-    private void bitMaskPawnAttack(Piece[][] board, boolean[][] mask, int x, int y, boolean col, boolean includeOwn) {
+    private void bitMaskPawnAttack(Piece[][] board, boolean[][] mask, int X, int y, boolean col, boolean includeOwn, Pair pinnedVector) {
         int vert = col ? -1 : 1;
-        x += vert;
+        int x = X + vert;
         for (int i = -1; i <=1; i += 2) {
             if (withinBounds(x, y + i) && board[x][y + i] != null && (board[x][y + i].getColor() != col || includeOwn)) {
-                mask[x][y + i] = true;
+                if (pinnedVector == null || (X + pinnedVector.getX() == x && i == pinnedVector.getY()) || (X - pinnedVector.getX() == x && i == -pinnedVector.getY())) {
+                    mask[x][y + i] = true;
+                }
             } else if (withinBounds(x - vert, y + i) && board[x - vert][y + i] != null && board[x - vert][y + i].getSymbol() == 'P'
                     && board[x - vert][y + i].getColor() != col && board[x - vert][y + i].getNumMoves() == 1) {
-                mask[x - vert][y + i] = true;
-                board[x - vert][y + i].setEnPassant(true);
+                if (pinnedVector == null || (X + pinnedVector.getX() == x && i == pinnedVector.getY()) || (X - pinnedVector.getX() == x && i == -pinnedVector.getY())) {
+                    mask[x][y + i] = true;
+                    board[x - vert][y + i].setEnPassant(true);
+                }
             }
         }
     }
@@ -416,16 +427,19 @@ public class MoveGeneration {
      * @param x                 the x coordinate of the pawn
      * @param y                 the y coordinate of the pawn
      * @param col               the colour of the pawn
+     * @param pinnedVector      vector pair to represent the direction of a pinning piece, to only movement along that vector is allowed if it's not null
      */
-    private void bitMaskPawnMove(Piece[][] board, boolean[][] mask, int x, int y, boolean col) {
+    private void bitMaskPawnMove(Piece[][] board, boolean[][] mask, int x, int y, boolean col, Pair pinnedVector) {
         int vert = col ? -1 : 1;
         int newx = x + vert;
-        if (withinBounds(newx, y) && board[newx][y] == null) {
-            mask[newx][y] = true;
-        }
-        newx += vert;
-        if (board[x][y].getNumMoves() == 0 && withinBounds(newx, y) && board[newx][y] == null) {
-            mask[newx][y] = true;
+        if (pinnedVector == null || pinnedVector.getY() == 0) {
+            if (withinBounds(newx, y) && board[newx][y] == null) {
+                mask[newx][y] = true;
+            }
+            newx += vert;
+            if (board[x][y].getNumMoves() == 0 && withinBounds(newx, y) && board[newx][y] == null) {
+                mask[newx][y] = true;
+            }
         }
     }
 
