@@ -90,7 +90,7 @@ public class MoveGeneration {
     private void allPiecesFindMoves(Piece[][] board, boolean[][] captureBlockMask, Pair[][] pinnedMask, boolean col, boolean kingChecked) {
         for (int i = 0; i < BOARD_SIZE; i++) {
             for (int j = 0; j < BOARD_SIZE; j++) {
-                if (board[i][j] != null && board[i][j].getColor() == col) {
+                if (board[i][j] != null && board[i][j].getColor() == col && board[i][j].getSymbol() != 'K') {
                     // Knights cannot move at all if they are pinned, so skip move generation
                     if (pinnedMask[i][j] != null && board[i][j].getSymbol() == 'N') {
                         board[i][j].setMoveMask(new boolean[BOARD_SIZE][BOARD_SIZE]);
@@ -286,7 +286,7 @@ public class MoveGeneration {
                     bitMaskDirectional(board, mask, piece.getX(), piece.getY(), 1, -1, piece.getColor(), false);
                     bitMaskDirectional(board, mask, piece.getX(), piece.getY(), -1, 1, piece.getColor(), false);
                 }
-                if (vector == null || vector.getX() + vector.getY() != 0) {
+                if (vector == null || vector.getX() + vector.getY() == 2 || vector.getX() + vector.getY() == -2) {
                     bitMaskDirectional(board, mask, piece.getX(), piece.getY(), 1, 1, piece.getColor(), false);
                     bitMaskDirectional(board, mask, piece.getX(), piece.getY(), -1, -1, piece.getColor(), false);
                 }
@@ -315,9 +315,7 @@ public class MoveGeneration {
                 }
             }
             case 'K' -> {
-                if (kingChecked && piece.getNumMoves() == 0) {
-                    // add castling move functionality
-                }
+                // empty as king moves should be generated already
             }
             default -> System.out.println("invalid piece symbol, cant calculate move mask");
         }
@@ -482,7 +480,7 @@ public class MoveGeneration {
                 if (i == 0 && j == 0) {
                     continue;
                 }
-                if (withinBounds(x + i, y + j) && (board[x + i][y + j] == null
+                 if (withinBounds(x + i, y + j) && (board[x + i][y + j] == null
                         || board[x + i][y + j].getColor() != col || includeOwn)) {
                     mask[x + i][y + j] = true;
                 }

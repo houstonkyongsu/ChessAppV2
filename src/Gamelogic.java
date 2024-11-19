@@ -69,6 +69,7 @@ public class Gamelogic {
         board[x][y] = piece;
         piece.setX(x);
         piece.setY(y);
+        piece.incrementNumMoves();
         board[oldX][oldY] = null;
         // TODO:: implement functionality to deal with the case of an enPassent move
         clearOldMoves();

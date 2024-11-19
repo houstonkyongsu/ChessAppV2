@@ -160,7 +160,6 @@ public class ChessAppMain extends JPanel implements ActionListener {
         ui.setLayout(new BoxLayout(ui, BoxLayout.PAGE_AXIS));
         ui.add(board);
         ui.add(panel);
-
     }
 
     /**
@@ -204,10 +203,57 @@ public class ChessAppMain extends JPanel implements ActionListener {
                 updateGraphics();
                 TimeUnit.MILLISECONDS.sleep(10);
 
-
             }
         } catch (Exception e) {
             System.out.println(e.getMessage());
+        }
+    }
+
+    private void resetAllButtonsColour() {
+        for (int i = 0; i < gridSquares.length; i++) {
+            for (int j = 0; j < gridSquares[0].length; j++) {
+                JButton b = gridSquares[i][j];
+                if ((i + j) % 2 == 0) {
+                    b.setBackground(Color.WHITE);
+                } else {
+                    b.setBackground(Color.GRAY);
+                }
+            }
+        }
+    }
+
+    private void highlightAvailableMoves(Piece movePiece) {
+        for (Pair p : movePiece.getMoveList()) {
+            gridSquares[p.getX()][p.getY()].setBackground(Color.green);
+        }
+    }
+
+    @Override
+    public void actionPerformed(ActionEvent e) {
+        JButton b = (JButton) e.getSource();
+        if (b != null && b.getName() == null) {
+            int i = (int) b.getClientProperty("row");
+            int j = (int) b.getClientProperty("col");
+            if (logic.checkValidPiece(j, i, logic.getColour())) {
+                resetAllButtonsColour();
+                movePiece = logic.getPiece(j, i);
+                System.out.println(movePiece.getSymbol() + " times moved:" + movePiece.getNumMoves() + ", moves available:" + movePiece.getMoveList().size());
+                highlightAvailableMoves(movePiece);
+            } else if (movePiece != null) {
+                if (logic.moveInPieceMoveList(movePiece, j, i)) {
+                    logic.makeGameMove(movePiece, j, i);
+                    movePiece = null;
+                    logic.setColour(!logic.getColour());
+                    logic.updateAvailableMoves();
+                    resetAllButtonsColour();
+                }
+            }
+        } else if (b != null && b.getName() != null && logic.isGameOver()) {
+            if (b.getName().equals("left")) {
+                System.out.println("left");
+            } else {
+                System.out.println("right");
+            }
         }
     }
 
@@ -218,32 +264,6 @@ public class ChessAppMain extends JPanel implements ActionListener {
                 new ChessAppMain(0, 1);
             } // Integer.parseInt(args[0]), Integer.parseInt(args[1])
         });
-    }
-
-    @Override
-    public void actionPerformed(ActionEvent e) {
-        JButton b = (JButton) e.getSource();
-        if (b != null && b.getName() == null) {
-            int i = (int) b.getClientProperty("row");
-            int j = (int) b.getClientProperty("col");
-            if (logic.checkValidPiece(j, i, logic.getColour())) {
-                movePiece = logic.getPiece(j, i);
-                System.out.println(movePiece.getSymbol());
-            } else if (movePiece != null) {
-                if (logic.moveInPieceMoveList(movePiece, j, i)) {
-                    logic.makeGameMove(movePiece, j, i);
-                    movePiece = null;
-                    logic.setColour(!logic.getColour());
-                    logic.updateAvailableMoves();
-                }
-            }
-        } else if (b != null && b.getName() != null && logic.isGameOver()) {
-            if (b.getName().equals("left")) {
-                System.out.println("left");
-            } else {
-                System.out.println("right");
-            }
-        }
     }
 
 }

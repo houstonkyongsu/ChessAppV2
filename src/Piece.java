@@ -51,7 +51,7 @@ public class Piece {
 
     public void setNumMoves(int numMoves) { this.numMoves = numMoves; }
 
-    public void increamentNumMoves() { numMoves++; }
+    public void incrementNumMoves() { numMoves++; }
 
     public boolean getPinned() { return isPinned; }
 
