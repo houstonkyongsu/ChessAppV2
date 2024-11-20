@@ -31,6 +31,7 @@ public class MoveGeneration {
 
         bitMaskKingAttack(board, tempKingMoves, king.getX(), king.getY(), col, false);
         filterXAndNotY(tempKingMoves, attackedSquareMask);
+        bitMaskKingCastle(board, tempKingMoves, king.getX(), king.getY(), col, attackedSquareMask);
         king.setMoveMask(tempKingMoves);
         king.setMoveListFromMask(tempKingMoves);
 
@@ -47,7 +48,7 @@ public class MoveGeneration {
             System.out.println("Checking pieces: " + checkingPieces.size());
             if (checkingPieces.size() == 2) {
                 // king is in double check, only king moves are available, so no other calculation needed
-                if (sumMaskBits(tempKingMoves) == 0) {
+                if (king.getMoveList().isEmpty()) {
                     String winningCol = !col ? "white" : "black";
                     System.out.println("Checkmate, " + winningCol + " wins!");
                     return false;
@@ -480,9 +481,26 @@ public class MoveGeneration {
                 if (i == 0 && j == 0) {
                     continue;
                 }
-                 if (withinBounds(x + i, y + j) && (board[x + i][y + j] == null
+                if (withinBounds(x + i, y + j) && (board[x + i][y + j] == null
                         || board[x + i][y + j].getColor() != col || includeOwn)) {
                     mask[x + i][y + j] = true;
+                }
+            }
+        }
+    }
+
+    private void bitMaskKingCastle(Piece[][] board, boolean[][] mask, int x, int y, boolean col, boolean[][] attackedMask) {
+        if (!attackedMask[x][y]) {
+            if (board[x][y].getNumMoves() == 0 && board[x][0] != null && board[x][0].getColor() == col
+                    && board[x][0].getSymbol() == 'R' && board[x][0].getNumMoves() == 0) {
+                if (board[x][1] == null && board[x][2] == null && board[x][3] == null && !attackedMask[x][2] && !attackedMask[x][3]) {
+                    mask[x][y - 2] = true;
+                }
+            }
+            if (board[x][y].getNumMoves() == 0 && board[x][7] != null && board[x][7].getColor() == col
+                    && board[x][7].getSymbol() == 'R' && board[x][7].getNumMoves() == 0) {
+                if (board[x][6] == null && board[x][5] == null && !attackedMask[x][6] && !attackedMask[x][5]) {
+                    mask[x][y + 2] = true;
                 }
             }
         }

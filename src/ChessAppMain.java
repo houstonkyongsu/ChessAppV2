@@ -204,6 +204,8 @@ public class ChessAppMain extends JPanel implements ActionListener {
                 TimeUnit.MILLISECONDS.sleep(10);
 
             }
+            updateGraphics();
+
         } catch (Exception e) {
             System.out.println(e.getMessage());
         }

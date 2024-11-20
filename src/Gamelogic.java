@@ -71,6 +71,16 @@ public class Gamelogic {
         piece.setY(y);
         piece.incrementNumMoves();
         board[oldX][oldY] = null;
+        if (piece.getSymbol() == 'K' && Math.abs(oldY - y) > 1) {
+            int rY = oldY > y ? oldY - 1 : oldY + 1;
+            int oldRY = oldY > y ? 0 : 7;
+            if (board[x][oldRY] != null && board[x][oldRY].getSymbol() == 'R') {
+                board[x][rY] = board[x][oldRY];
+                board[x][rY].incrementNumMoves();
+                board[x][rY].setY(rY);
+                board[x][oldRY] = null;
+            }
+        }
         // TODO:: implement functionality to deal with the case of an enPassent move
         clearOldMoves();
     }
