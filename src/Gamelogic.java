@@ -8,7 +8,7 @@ public class Gamelogic {
     private int numMoves = 0;
     private boolean gameOver;
     private BoardUtils boardUtils;
-    private Piece[][] board;
+    //private Piece[][] board;
     private MoveGeneration moveGeneration;
     private ArrayList<Piece> moveablePieces;
     private ArrayList<Move> moveHistory;
@@ -17,22 +17,23 @@ public class Gamelogic {
         boardUtils = new BoardUtils();
         gameOver = false;
         colour = true;
-        board = new Piece[BOARD_SIZE][BOARD_SIZE];
+        //board = new Piece[BOARD_SIZE][BOARD_SIZE];
         moveGeneration = new MoveGeneration();
         moveablePieces = new ArrayList<>();
         moveHistory = new ArrayList<>();
     }
 
-    public void setupGame() {
-        board = boardUtils.setupBoard();
+    public Piece[][] setupGame() {
+        Piece[][] board = boardUtils.setupBoard();
         colour = true;
+        return board;
     }
 
     public boolean isGameOver() { return gameOver; }
 
-    public Piece[][] getBoard() { return board; }
+    //public Piece[][] getBoard() { return board; }
 
-    public void setBoard(Piece[][] board) { this.board = board; }
+    //public void setBoard(Piece[][] board) { this.board = board; }
 
     public boolean getColour() { return colour; }
 
@@ -40,10 +41,15 @@ public class Gamelogic {
 
     public List<Piece> getMoveablePieces() { return moveablePieces; }
 
-    public Piece getPiece(int x, int y) { return board[x][y]; }
+    public Piece getPiece(Piece[][] board, int x, int y) { return board[x][y]; }
 
-    public boolean checkValidPiece(int x, int y, boolean col) {
+    public boolean checkValidPiece(Piece[][] board, int x, int y, boolean col) {
         return board[x][y] != null && board[x][y].getColor() == col;
+    }
+
+    public boolean checkPawnPromote(Piece piece, int x, boolean col) {
+        int promoteRow = col ? 0 : 7;
+        return piece.getSymbol() == 'P' && x == promoteRow;
     }
 
     public boolean moveInPieceMoveList(Piece piece, int x, int y) {
@@ -55,7 +61,7 @@ public class Gamelogic {
         return false;
     }
 
-    public List<Pair> getPieceMoveList(int x, int y) {
+    public List<Pair> getPieceMoveList(Piece[][] board, int x, int y) {
         List<Pair> moves = new ArrayList<>();
         if (board[x][y] != null) {
             moves = board[x][y].getMoveList();
@@ -63,7 +69,7 @@ public class Gamelogic {
         return moves;
     }
 
-    public void makeGameMove(Piece piece, int x, int y) {
+    public void makeGameMove(Piece[][] board, Piece piece, int x, int y) {
         int oldX = piece.getX();
         int oldY = piece.getY();
         board[x][y] = piece;
@@ -82,20 +88,21 @@ public class Gamelogic {
             }
         }
         // TODO:: implement functionality to deal with the case of an enPassent move
-        clearOldMoves();
+        clearOldMoves(board);
     }
 
-    public void clearOldMoves() {
+    public void clearOldMoves(Piece[][] board) {
         for (int i = 0; i < BOARD_SIZE; i++) {
             for (int j = 0; j < BOARD_SIZE; j++) {
                 if (board[i][j] != null) {
                     board[i][j].clearMoves();
+                    board[i][j].setEnPassant(false);
                 }
             }
         }
     }
 
-    public void updateAvailableMoves() {
+    public void updateAvailableMoves(Piece[][] board) {
         if (!moveGeneration.generateMoves(board, colour)) {
             gameOver = true;
         }

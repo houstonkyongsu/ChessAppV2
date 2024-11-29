@@ -47,6 +47,8 @@ public class Piece {
 
     public char getSymbol() { return symbol; }
 
+    public void setSymbol(char c) { symbol = c; }
+
     public int getNumMoves() { return numMoves; }
 
     public void setNumMoves(int numMoves) { this.numMoves = numMoves; }

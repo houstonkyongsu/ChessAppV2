@@ -2,6 +2,7 @@ import javax.swing.border.*;
 import javax.swing.plaf.basic.BasicArrowButton;
 import java.awt.image.*;
 import java.io.IOException;
+import java.io.Serial;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import javax.imageio.ImageIO;
@@ -15,11 +16,12 @@ public class ChessAppMain extends JPanel implements ActionListener {
     final int BOARD_SIZE = 8;
     private JFrame frame;
     private JPanel ui;
-    private JPanel board;
     private static JButton[][] gridSquares;
-    private HashMap<String, Image> iconmap;
+    private final HashMap<String, Image> iconmap;
     private Piece movePiece = null;
+    private Piece[][] board;
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
     private Gamelogic logic;
@@ -89,38 +91,8 @@ public class ChessAppMain extends JPanel implements ActionListener {
      *  https://stackoverflow.com/questions/21142686/making-a-robust-resizable-swing-chess-gui
      */
     private void loadBoardGUI() {
-        board = new JPanel(new GridLayout(0, 8)) {
 
-            private static final long serialVersionUID = 1L;
-
-            /**
-             * Override the preferred size to return the largest it can, in
-             * a square shape.  Must (must, must) be added to a GridBagLayout
-             * as the only component (it uses the parent as a guide to size)
-             * with no GridBagConstaint (so it is centered).
-             */
-            @Override
-            public final Dimension getPreferredSize() {
-                Dimension d = super.getPreferredSize();
-                Dimension prefSize = null;
-                Component c = getParent();
-                if (c == null) {
-                    prefSize = new Dimension(
-                            (int)d.getWidth(),(int)d.getHeight());
-                } else if (c!=null &&
-                        c.getWidth()>d.getWidth() &&
-                        c.getHeight()>d.getHeight()) {
-                    prefSize = c.getSize();
-                } else {
-                    prefSize = d;
-                }
-                int w = (int) prefSize.getWidth();
-                int h = (int) prefSize.getHeight();
-                int s = (w>h ? h : w);
-                return new Dimension(s,s);
-            }
-        };
-        board.setBorder(new CompoundBorder(new EmptyBorder(8,8,8,8), new LineBorder(Color.BLACK)));
+        JPanel board = getJPanel();
 
         Insets buttonMargin = new Insets(0, 0, 0, 0);
         for (int i = 0; i < gridSquares.length; i++) {
@@ -162,11 +134,41 @@ public class ChessAppMain extends JPanel implements ActionListener {
         ui.add(panel);
     }
 
+    private JPanel getJPanel() {
+        JPanel board = new JPanel(new GridLayout(0, 8)) {
+
+            private static final long serialVersionUID = 1L;
+
+            @Override
+            public final Dimension getPreferredSize() {
+                Dimension d = super.getPreferredSize();
+                Dimension prefSize = null;
+                Component c = getParent();
+                if (c == null) {
+                    prefSize = new Dimension(
+                            (int) d.getWidth(), (int) d.getHeight());
+                } else if (c != null &&
+                        c.getWidth() > d.getWidth() &&
+                        c.getHeight() > d.getHeight()) {
+                    prefSize = c.getSize();
+                } else {
+                    prefSize = d;
+                }
+                int w = (int) prefSize.getWidth();
+                int h = (int) prefSize.getHeight();
+                int s = (w > h ? h : w);
+                return new Dimension(s, s);
+            }
+        };
+        board.setBorder(new CompoundBorder(new EmptyBorder(8,8,8,8), new LineBorder(Color.BLACK)));
+        return board;
+    }
+
     /**
      *  Function to update the graphics based on the current board state
      */
     public void updateGraphics() {
-        Piece[][] brd = logic.getBoard();
+        Piece[][] brd = board;
         for (int i = 0; i < BOARD_SIZE; i++) {
             for (int j = 0; j < BOARD_SIZE; j++) {
                 if (brd[i][j] != null) {
@@ -194,15 +196,13 @@ public class ChessAppMain extends JPanel implements ActionListener {
 
     private void runGame() {
         logic = new Gamelogic();
-        logic.setupGame();
-        logic.updateAvailableMoves();
-
+        board = logic.setupGame();
+        logic.updateAvailableMoves(board);
         try {
 
             while (!logic.isGameOver()) {
                 updateGraphics();
                 TimeUnit.MILLISECONDS.sleep(10);
-
             }
             updateGraphics();
 
@@ -230,23 +230,54 @@ public class ChessAppMain extends JPanel implements ActionListener {
         }
     }
 
+    private char getPawnPromoteOption() {
+        Object[] options1 = { "Queen", "Rook", "Bishop", "Knight" };
+
+        int result = JOptionPane.showOptionDialog(null, "Message", "Choose a piece",
+                JOptionPane.DEFAULT_OPTION, JOptionPane.PLAIN_MESSAGE,
+                null, options1, options1[0]);
+
+        return getPieceSymbol(result);
+    }
+
+    private char getPieceSymbol(int option) {
+        switch(option) {
+            case 0 -> {
+                return 'Q';
+            }
+            case 1 -> {
+                return 'R';
+            }
+            case 2 -> {
+                return 'B';
+            }
+            case 3 -> {
+                return 'N';
+            }
+        }
+        return 'Q';
+    }
+
     @Override
     public void actionPerformed(ActionEvent e) {
         JButton b = (JButton) e.getSource();
         if (b != null && b.getName() == null) {
             int i = (int) b.getClientProperty("row");
             int j = (int) b.getClientProperty("col");
-            if (logic.checkValidPiece(j, i, logic.getColour())) {
+            if (logic.checkValidPiece(board, j, i, logic.getColour())) {
                 resetAllButtonsColour();
-                movePiece = logic.getPiece(j, i);
+                movePiece = logic.getPiece(board, j, i);
                 System.out.println(movePiece.getSymbol() + " times moved:" + movePiece.getNumMoves() + ", moves available:" + movePiece.getMoveList().size());
                 highlightAvailableMoves(movePiece);
             } else if (movePiece != null) {
                 if (logic.moveInPieceMoveList(movePiece, j, i)) {
-                    logic.makeGameMove(movePiece, j, i);
+                    if (logic.checkPawnPromote(movePiece, j, logic.getColour())) {
+                        movePiece.setSymbol(getPawnPromoteOption());
+                    }
+                    logic.makeGameMove(board, movePiece, j, i);
                     movePiece = null;
                     logic.setColour(!logic.getColour());
-                    logic.updateAvailableMoves();
+                    logic.updateAvailableMoves(board);
                     resetAllButtonsColour();
                 }
             }
