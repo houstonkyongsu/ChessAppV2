@@ -403,6 +403,7 @@ public class MoveGeneration {
      */
     private void bitMaskPawnAttack(Piece[][] board, boolean[][] mask, int X, int y, boolean col, boolean includeOwn, Pair pinnedVector) {
         int vert = col ? -1 : 1;
+        int row = col ? 3 : 4;
         int x = X + vert;
         for (int i = -1; i <=1; i += 2) {
             if (withinBounds(x, y + i) && board[x][y + i] != null && (board[x][y + i].getColor() != col || includeOwn)) {
@@ -410,7 +411,7 @@ public class MoveGeneration {
                     mask[x][y + i] = true;
                 }
             } else if (withinBounds(x - vert, y + i) && board[x - vert][y + i] != null && board[x - vert][y + i].getSymbol() == 'P'
-                    && board[x - vert][y + i].getColor() != col && board[x - vert][y + i].getNumMoves() == 1) {
+                    && board[x - vert][y + i].getColor() != col && board[x - vert][y + i].getNumMoves() == 1 && x - vert == row) {
                 if (pinnedVector == null || (X + pinnedVector.getX() == x && i == pinnedVector.getY()) || (X - pinnedVector.getX() == x && i == -pinnedVector.getY())) {
                     mask[x][y + i] = true;
                     board[x - vert][y + i].setEnPassant(true);
