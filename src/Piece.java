@@ -10,7 +10,7 @@ public class Piece {
     private int numMoves;
     private boolean isPinned;
     private boolean[][] moveMask;
-    private boolean enPassant;
+    private Pair enPassant;
     private ArrayList<Pair> moveList;
 
     public Piece(int x, int y, boolean color, char symbol) {
@@ -21,7 +21,7 @@ public class Piece {
         moveMask = new boolean[BOARD_SIZE][BOARD_SIZE];
         isPinned = false;
         numMoves = 0;
-        enPassant = false;
+        enPassant = null;
         moveList = new ArrayList<>();
     }
 
@@ -65,9 +65,9 @@ public class Piece {
 
     public void resetMask() { moveMask = new boolean[BOARD_SIZE][BOARD_SIZE]; }
 
-    public boolean getEnPassant() { return enPassant; }
+    public Pair getEnPassant() { return enPassant; }
 
-    public void setEnPassant(boolean enPassant) { this.enPassant = enPassant; }
+    public void setEnPassant(Pair enPassant) { this.enPassant = enPassant; }
 
     public void clearMoves() {
         moveList = new ArrayList<>();

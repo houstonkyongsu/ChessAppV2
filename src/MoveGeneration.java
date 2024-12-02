@@ -414,7 +414,8 @@ public class MoveGeneration {
                     && board[x - vert][y + i].getColor() != col && board[x - vert][y + i].getNumMoves() == 1 && x - vert == row) {
                 if (pinnedVector == null || (X + pinnedVector.getX() == x && i == pinnedVector.getY()) || (X - pinnedVector.getX() == x && i == -pinnedVector.getY())) {
                     mask[x][y + i] = true;
-                    board[x - vert][y + i].setEnPassant(true);
+                    board[X][y].setEnPassant(new Pair(x - vert, y + i));
+                    System.out.println((x - vert) + ":" + (y + i));
                 }
             }
         }

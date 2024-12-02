@@ -86,8 +86,9 @@ public class Gamelogic {
                 board[x][rY].setY(rY);
                 board[x][oldRY] = null;
             }
+        } else if (checkEnPassentMove(piece, oldX, y)) {
+            board[piece.getEnPassant().getX()][piece.getEnPassant().getY()] = null;
         }
-        // TODO:: implement functionality to deal with the case of an enPassent move
         clearOldMoves(board);
     }
 
@@ -96,7 +97,7 @@ public class Gamelogic {
             for (int j = 0; j < BOARD_SIZE; j++) {
                 if (board[i][j] != null) {
                     board[i][j].clearMoves();
-                    board[i][j].setEnPassant(false);
+                    board[i][j].setEnPassant(null);
                 }
             }
         }
@@ -118,6 +119,10 @@ public class Gamelogic {
             gameOver = true;
         }
         moveablePieces = pieceList;
+    }
+
+    private boolean checkEnPassentMove(Piece piece, int x, int y) {
+        return piece.getSymbol() == 'P' && piece.getEnPassant() != null && x == piece.getEnPassant().getX() && y == piece.getEnPassant().getY();
     }
 
     /**
