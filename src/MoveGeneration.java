@@ -97,7 +97,7 @@ public class MoveGeneration {
                         board[i][j].setMoveMask(new boolean[BOARD_SIZE][BOARD_SIZE]);
                         continue;
                     }
-                    boolean[][] moveMask = getBitMaskMove(board, board[i][j], pinnedMask, kingChecked);
+                    boolean[][] moveMask = getBitMaskMove(board, board[i][j], pinnedMask);
                     if (kingChecked) {
                         // filter out any moves which are not capturing or blocking the checking piece
                         filterXAndY(moveMask, captureBlockMask);
@@ -261,10 +261,9 @@ public class MoveGeneration {
      * @param board             the current board state
      * @param piece             the piece for which the moves are being generated
      * @param pinnedMask        the 2D Pair array to indicate position of pinned pieces and the direction of their attacker
-     * @param kingChecked       boolean which denotes if the king is in check or not
      * @return                  2D boolean array noting all the squares a piece can move to based on the piece's own movement rules
      */
-    private boolean[][] getBitMaskMove(Piece[][] board, Piece piece, Pair[][] pinnedMask, boolean kingChecked) {
+    private boolean[][] getBitMaskMove(Piece[][] board, Piece piece, Pair[][] pinnedMask) {
         boolean[][] mask = new boolean[BOARD_SIZE][BOARD_SIZE];
         Pair vector = pinnedMask[piece.getX()][piece.getY()];
         switch (piece.getSymbol()) {
@@ -411,11 +410,10 @@ public class MoveGeneration {
                     mask[x][y + i] = true;
                 }
             } else if (withinBounds(x - vert, y + i) && board[x - vert][y + i] != null && board[x - vert][y + i].getSymbol() == 'P'
-                    && board[x - vert][y + i].getColor() != col && board[x - vert][y + i].getNumMoves() == 1 && x - vert == row) {
+                    && board[x - vert][y + i].getColor() != col && board[x - vert][y + i].getNumMoves() == 1 && x - vert == row && board[x - vert][y + i].getLastMoved()) {
                 if (pinnedVector == null || (X + pinnedVector.getX() == x && i == pinnedVector.getY()) || (X - pinnedVector.getX() == x && i == -pinnedVector.getY())) {
                     mask[x][y + i] = true;
                     board[X][y].setEnPassant(new Pair(x - vert, y + i));
-                    System.out.println((x - vert) + ":" + (y + i));
                 }
             }
         }

@@ -12,6 +12,7 @@ public class Piece {
     private boolean[][] moveMask;
     private Pair enPassant;
     private ArrayList<Pair> moveList;
+    private boolean lastMoved;
 
     public Piece(int x, int y, boolean color, char symbol) {
         this.setX(x);
@@ -23,6 +24,7 @@ public class Piece {
         numMoves = 0;
         enPassant = null;
         moveList = new ArrayList<>();
+        lastMoved = false;
     }
 
     /**
@@ -68,6 +70,10 @@ public class Piece {
     public Pair getEnPassant() { return enPassant; }
 
     public void setEnPassant(Pair enPassant) { this.enPassant = enPassant; }
+
+    public boolean getLastMoved() { return lastMoved; }
+
+    public void setLastMoved(boolean lastMoved) { this.lastMoved = lastMoved; }
 
     public void clearMoves() {
         moveList = new ArrayList<>();

@@ -90,6 +90,7 @@ public class Gamelogic {
             board[piece.getEnPassant().getX()][piece.getEnPassant().getY()] = null;
         }
         clearOldMoves(board);
+        piece.setLastMoved(true);
     }
 
     public void clearOldMoves(Piece[][] board) {
@@ -98,6 +99,7 @@ public class Gamelogic {
                 if (board[i][j] != null) {
                     board[i][j].clearMoves();
                     board[i][j].setEnPassant(null);
+                    board[i][j].setLastMoved(false);
                 }
             }
         }

@@ -4,7 +4,7 @@ public class FEN {
 
     public FEN() {}
 
-    public String serialize(Piece[][] board) {
+    public String serialize(Piece[][] board, boolean col, int halfMove, int fullMove) {
         StringBuilder fen = new StringBuilder();
         for (int i = 0; i < BOARD_SIZE; i++) {
             int k = 0;
@@ -30,13 +30,30 @@ public class FEN {
                 fen.append('/');
             }
         }
-        fen.append(' ');
+        String turn = col ? " w " : " b ";
+        fen.append(turn);
+
 
         return fen.toString();
     }
 
     public Piece[][] deserialize(String fen) {
         Piece[][] board = new Piece[BOARD_SIZE][BOARD_SIZE];
+
+        String[] fenArr = fen.split(" ");
+        String boardDescription = fenArr[0];
+        int i = 0, j = 0;
+        for (int x = 0; x < boardDescription.length(); x++) {
+            if (boardDescription.charAt(x) == '/') {
+                i++;
+                j = 0;
+            } else if (Character.isDigit(boardDescription.charAt(x))) {
+                j += Character.getNumericValue(boardDescription.charAt(x));
+            } else {
+
+            }
+
+        }
 
         return board;
     }
